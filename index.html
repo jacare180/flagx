@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flagx: adivinhe a bandeira em seis pedaços</title>
+  <meta name="description" content="Jogo de adivinhar bandeiras do mundo. A cada chute errado, mais um pedaço aparece, e o jacaré comenta.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@100..150,900&family=Archivo:wght@400;600&family=Archivo+Narrow:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/flagx.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <a class="wordmark" href="./" aria-label="Flagx, voltar ao início">Flagx</a>
+      <dl class="placar" aria-label="Placar">
+        <div><dt>Pontos</dt><dd class="num" id="pontos">0</dd></div>
+        <div><dt>Sequência</dt><dd class="num" id="sequencia">0</dd></div>
+        <div><dt>Recorde</dt><dd class="num" id="recorde">0</dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <main class="container jogo" id="jogo" data-estado="carregando">
+    <section class="mesa" aria-labelledby="titulo-mesa">
+      <div class="mesa__cabeca">
+        <h1 id="titulo-mesa">Que bandeira é essa?</h1>
+        <p class="modo">Modo clássico, mundo todo</p>
+      </div>
+
+      <figure class="quadro" id="quadro" aria-describedby="progresso">
+        <img id="bandeira" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" width="640" height="427" hidden>
+        <div class="pecas" id="pecas" aria-hidden="true">
+          <span class="peca" data-peca="1"><span>1</span></span>
+          <span class="peca" data-peca="2"><span>2</span></span>
+          <span class="peca" data-peca="3"><span>3</span></span>
+          <span class="peca" data-peca="4"><span>4</span></span>
+          <span class="peca" data-peca="5"><span>5</span></span>
+          <span class="peca" data-peca="6"><span>6</span></span>
+        </div>
+      </figure>
+
+      <p class="progresso" id="progresso">
+        <span><strong class="num" id="reveladas">0</strong> de 6 pedaços à mostra</span>
+        <span>Vale <strong class="num" id="valor">0</strong> pontos</span>
+      </p>
+    </section>
+
+    <section class="lado" aria-label="O jacaré e o seu chute">
+      <div class="jacare">
+        <svg class="croc" id="croc" data-humor="neutro" viewBox="0 0 220 150" role="img" aria-label="Jacaré, o mascote do Flagx">
+          <g class="croc__corpo">
+            <rect class="croc__pescoco" x="6" y="58" width="34" height="62"></rect>
+            <rect class="croc__olho-base" x="44" y="22" width="46" height="40"></rect>
+            <circle class="croc__olho" cx="67" cy="40" r="11"></circle>
+            <circle class="croc__pupila" cx="71" cy="40" r="5"></circle>
+            <rect class="croc__palpebra" x="52" y="26" width="30" height="14"></rect>
+            <g class="croc__dentes-cima">
+              <polygon points="96,86 104,98 112,86"></polygon>
+              <polygon points="124,86 132,98 140,86"></polygon>
+              <polygon points="152,86 160,98 168,86"></polygon>
+              <polygon points="180,86 188,98 196,86"></polygon>
+            </g>
+            <polygon class="croc__maxila" points="36,58 176,58 212,68 212,86 36,86"></polygon>
+            <rect class="croc__narina" x="190" y="62" width="6" height="5"></rect>
+            <g class="croc__mandibula">
+              <g class="croc__dentes-baixo">
+                <polygon points="110,92 118,80 126,92"></polygon>
+                <polygon points="138,92 146,80 154,92"></polygon>
+                <polygon points="166,92 174,80 182,92"></polygon>
+              </g>
+              <polygon class="croc__queixo" points="36,90 204,90 204,102 36,118"></polygon>
+            </g>
+          </g>
+        </svg>
+        <p class="fala" id="fala" role="status" aria-live="polite">Carregando as bandeiras do mundo. Vai treinando a cara de quem sabe.</p>
+      </div>
+
+      <form class="chute" id="form-chute" autocomplete="off" novalidate>
+        <label for="campo-chute">Seu chute</label>
+        <div class="chute__linha">
+          <input id="campo-chute" name="chute" type="text" list="lista-paises" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Digite um país" aria-describedby="aviso-chute" disabled>
+          <button class="btn btn--primario" id="botao-chute" type="submit" disabled>Chutar</button>
+        </div>
+        <p class="aviso" id="aviso-chute"></p>
+        <datalist id="lista-paises"></datalist>
+        <button class="link" id="botao-desisto" type="button" disabled>Desisto, mostra a resposta</button>
+      </form>
+
+      <div class="fim" id="fim" hidden>
+        <p class="fim__rotulo" id="fim-rotulo">Era</p>
+        <h2 class="fim__pais" id="fim-pais" tabindex="-1"></h2>
+        <p class="fim__placar" id="fim-placar"></p>
+        <button class="btn btn--primario" id="botao-proxima" type="button">Próxima bandeira</button>
+      </div>
+
+      <div class="falha" id="falha" hidden>
+        <p>Não deu para buscar as bandeiras agora. Confira a internet e tente de novo.</p>
+        <button class="btn btn--secundario" id="botao-tentar" type="button">Tentar de novo</button>
+      </div>
+
+      <section class="chutes" aria-labelledby="titulo-chutes">
+        <h2 id="titulo-chutes">Chutes desta rodada</h2>
+        <ol class="chutes__lista" id="lista-chutes"></ol>
+        <p class="chutes__vazio" id="chutes-vazio">Nenhum chute ainda. O jacaré está esperando.</p>
+      </section>
+    </section>
+
+    <noscript><p class="falha">O Flagx precisa de JavaScript ligado para sortear as bandeiras.</p></noscript>
+  </main>
+
+  <footer class="rodape">
+    <div class="container">
+      <p>Bandeiras de <a href="https://flagcdn.com">FlagCDN</a>. Dados dos países de <a href="https://restcountries.com">REST Countries</a>.</p>
+    </div>
+  </footer>
+
+  <script src="js/mensagens.js"></script>
+  <script src="js/jogo.js"></script>
+</body>
+</html>

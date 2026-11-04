@@ -1,0 +1,29 @@
+[
+ {
+  "scope": "app",
+  "shape": "app screen",
+  "theme": "overprint",
+  "axes": "light/grotesk-heavy/cool",
+  "hero": "none",
+  "nav": "top bar, wordmark and score",
+  "footer": "one credit line",
+  "imagery": "flag images from FlagCDN",
+  "photos": [],
+  "entry": "none",
+  "fingerprint": "board-left/jacare-right/ruled-guess-list",
+  "sections": [
+   "topbar",
+   "board",
+   "jacare and guess",
+   "guess list",
+   "footer"
+  ],
+  "signature": "the flag board, six numbered bills that lift one by one",
+  "waived": [
+   "80"
+  ],
+  "prompt": "Flagx, jogo de adivinhar bandeiras em seis pedaços com jacaré sarcástico",
+  "date": "2026-11-04",
+  "mode": "build"
+ }
+]

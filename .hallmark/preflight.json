@@ -1,0 +1,1 @@
+{ "scanned": "2026-11-04", "findings": { "fonts": "none for this page (chess page uses Lato via css/styles.css)", "palette": "none shared (chess page literal colours)", "motion": "none", "spacing": "none", "framework": "static HTML/CSS/JS" }, "preserve": ["the chess page untouched"], "introduce": ["Overprint theme", "tokens", "gates", "app screen scope"] }

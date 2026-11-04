@@ -1,0 +1,136 @@
+/* Hallmark · shape: app screen · genre: playful · theme: Overprint (deal 1/3, seed jogo-adivinhar-bandeiras-mundo-995d·03a2151f·2026-11-04·r0)
+ * nav: a top bar, the wordmark and the score · signature: the flag board, six numbered bills that lift one by one · states: loading, error, playing, round over · overprint: newsprint
+ * user overrides: rounded grey pieces with a thick ink edge, the jacaré printed in moss (the user asked for both)
+ * axes: light/grotesk-heavy/cool · posture: full-palette · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · weakest: P, a guessing board is familiar; the sarcastic jacaré carries the argument, so he speaks on every guess */
+/* Hallmark · waive 80 · one jacaré svg mascot beside the board, built from flat pass fills · the user asked for the jacaré as Flagx's protagonist, he reacts to every guess */
+@import url("./tokens.css");
+@import url("./base.css");
+
+:root {
+  --peca-num: clamp(2.5rem, 6vw, 4.5rem);
+  --text-marca: 1.728rem;
+  --color-peca: oklch(74% 0.008 85);
+  --color-musgo: var(--color-mix);
+  --color-musgo-claro: oklch(52% 0.12 142);
+  --radius-peca: 18px;
+}
+
+/* top bar */
+.topbar { border-bottom: var(--rule-bar) solid var(--color-ink); background: var(--color-paper); }
+.topbar__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-lg); min-height: 72px; }
+.wordmark { font: var(--display-weight) var(--text-marca)/1 var(--font-display); font-stretch: 150%; letter-spacing: var(--tracking-display); text-transform: uppercase; text-decoration: none; color: var(--color-ink); }
+.wordmark:hover { color: var(--color-ink-2); }
+.wordmark:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
+.placar { display: flex; margin: 0; }
+.placar > div { padding-inline: var(--space-lg); border-left: var(--rule-hair) solid var(--color-rule); }
+.placar > div:last-child { padding-right: 0; }
+.placar dt { font: 600 var(--text-sm)/1.2 var(--font-outlier); color: var(--color-muted); }
+.placar dd { margin: 0; font: var(--display-weight) var(--text-xl)/1.1 var(--font-display); font-stretch: 150%; }
+
+/* the game grid */
+.jogo { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-2xl) var(--gap-columns); padding-block: var(--space-2xl) var(--space-3xl); }
+.mesa__cabeca { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-xs) var(--space-lg); margin-bottom: var(--space-lg); }
+.mesa h1 { font-size: var(--text-3xl); font-stretch: var(--display-stretch); text-transform: uppercase; line-height: 1.02; max-width: none; }
+.modo { font: 600 var(--text-sm)/1.2 var(--font-outlier); color: var(--color-muted); }
+
+/* the board: the flag under six bills */
+.quadro { position: relative; margin: 0; aspect-ratio: var(--proporcao, 3 / 2); max-height: 70svh; max-width: 100%; border-top: var(--rule-bar) solid var(--color-ink); background: var(--color-paper-2); }
+.quadro > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+.jogo[data-modo-dificil="sim"] .quadro > img { filter: grayscale(1) contrast(1.2); transform: scaleX(-1); }
+.pecas { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.peca { display: grid; padding: var(--space-3xs); background: var(--color-ink); transition: opacity var(--dur-long) var(--ease-out), transform var(--dur-long) var(--ease-out); }
+.peca > span { display: grid; place-items: center; border: var(--rule-bar) solid var(--color-ink); border-radius: var(--radius-peca); background: var(--color-peca); color: var(--color-ink); font: var(--display-weight) var(--peca-num)/1 var(--font-display); font-stretch: 150%; font-variant-numeric: tabular-nums; }
+.peca.is-aberta { opacity: 0; transform: translateY(-8px); }
+.jogo[data-estado="carregando"] .peca > span { color: var(--color-ink-2); }
+.progresso { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs) var(--space-lg); margin-top: var(--space-sm); font: 600 var(--text-sm)/1.3 var(--font-outlier); color: var(--color-ink-2); }
+.progresso strong { font-family: var(--font-display); font-stretch: 150%; color: var(--color-ink); }
+
+/* the jacaré and his line */
+.lado { display: flex; flex-direction: column; gap: var(--space-xl); min-width: 0; }
+.jacare { display: grid; grid-template-columns: 11rem minmax(0, 1fr); align-items: start; gap: var(--space-md); }
+.croc { width: 100%; height: auto; overflow: visible; }
+.croc__pescoco, .croc__olho-base, .croc__maxila { fill: var(--color-musgo); stroke: var(--color-ink); stroke-width: 3; stroke-linejoin: miter; }
+.croc__queixo { fill: var(--color-musgo-claro); stroke: var(--color-ink); stroke-width: 3; stroke-linejoin: miter; }
+.croc__olho { fill: var(--color-paper); stroke: var(--color-ink); stroke-width: 3; }
+.croc__pupila, .croc__narina { fill: var(--color-ink); }
+.croc__palpebra { fill: var(--color-musgo); opacity: 0; transition: opacity var(--dur-short) var(--ease-out); }
+.croc__dentes-cima polygon, .croc__dentes-baixo polygon { fill: var(--color-paper); stroke: var(--color-ink); stroke-width: 2; stroke-linejoin: miter; }
+.croc__mandibula { transform-box: view-box; transform-origin: 36px 90px; transition: transform var(--dur-short) var(--ease-out); }
+.croc__pupila { transition: transform var(--dur-short) var(--ease-out); }
+.croc[data-humor="zoando"] .croc__mandibula { transform: rotate(16deg); }
+.croc[data-humor="zoando"] .croc__palpebra { opacity: 1; }
+.croc[data-humor="chocado"] .croc__mandibula { transform: rotate(9deg); }
+.croc[data-humor="chocado"] .croc__pupila { transform: translate(-4px, -3px); }
+.croc[data-humor="desdem"] .croc__palpebra { opacity: 1; }
+.croc[data-humor="desdem"] .croc__pupila { transform: translateX(-6px); }
+.fala { position: relative; padding: var(--space-md) var(--space-lg); box-shadow: inset 0 0 0 2px var(--color-ink); background: var(--color-paper); font-size: var(--text-lg); line-height: 1.4; min-height: 6.5rem; }
+.fala::before { content: ""; position: absolute; left: calc(-1 * var(--space-xs)); top: var(--space-lg); width: var(--space-md); height: var(--space-md); background: var(--color-paper); border-left: 2px solid var(--color-ink); border-bottom: 2px solid var(--color-ink); transform: rotate(45deg); }
+
+/* the guess form */
+.chute { display: grid; gap: var(--space-xs); }
+.chute label { font: 600 var(--text-sm)/1.2 var(--font-outlier); }
+.chute__linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-xs); }
+.chute input { min-height: 48px; padding: 0 var(--space-md); border: 0; border-radius: 0; box-shadow: inset 0 0 0 2px var(--color-ink); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-md); }
+.chute input::placeholder { color: var(--color-muted); }
+.chute input:hover { background: var(--color-paper-2); }
+.chute input:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -5px; }
+.chute input:disabled { opacity: 0.55; cursor: not-allowed; }
+.chute input[aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--color-error); }
+.aviso { min-height: 1lh; font-size: var(--text-sm); color: var(--color-error); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 var(--space-lg); border: 0; border-radius: 0; font: 600 var(--text-sm)/1 var(--font-outlier); text-transform: uppercase; white-space: nowrap; cursor: pointer; }
+.btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.btn:active { filter: brightness(0.9); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn[aria-busy="true"] { cursor: progress; }
+.btn--primario { background: var(--color-accent); color: var(--color-accent-ink); }
+.btn--primario:hover:not(:disabled) { background: var(--color-accent-2); color: var(--color-accent-2-ink); }
+.btn--secundario { background: transparent; color: var(--color-ink); box-shadow: inset 0 0 0 2px var(--color-ink); }
+.btn--secundario:hover:not(:disabled) { background: var(--color-paper-2); }
+
+.link { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--color-ink); font-size: var(--text-sm); white-space: nowrap; text-decoration: underline 2px var(--color-accent); text-underline-offset: 0.25em; cursor: pointer; }
+.link:hover:not(:disabled) { text-decoration-color: var(--color-ink); }
+.link:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.link:active { color: var(--color-ink-2); }
+.link:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* round over */
+.fim { display: grid; gap: var(--space-sm); justify-items: start; padding-top: var(--space-md); border-top: var(--rule-bar) solid var(--color-ink); }
+.fim__rotulo { font: 600 var(--text-sm)/1.2 var(--font-outlier); color: var(--color-muted); }
+.fim__pais { font-size: var(--text-3xl); font-stretch: var(--display-stretch); text-transform: uppercase; line-height: 1.02; max-width: none; }
+.fim__pais:focus { outline: none; }
+.fim__pais:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
+.fim__placar { margin-bottom: var(--space-sm); }
+
+.falha { display: grid; gap: var(--space-md); justify-items: start; padding: var(--space-lg); background: var(--color-paper-2); }
+
+/* this round's guesses */
+.chutes h2 { max-width: none; font-size: var(--text-lg); font-stretch: var(--display-stretch); text-transform: uppercase; padding-bottom: var(--space-sm); border-bottom: var(--rule-bar) solid var(--color-ink); }
+.chutes__lista { margin: 0; padding: 0; list-style: none; counter-reset: chute; }
+.chutes__lista li { counter-increment: chute; display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: var(--space-sm); align-items: baseline; padding-block: var(--space-sm); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.chutes__lista li::before { content: counter(chute); font: var(--display-weight) var(--text-md)/1 var(--font-display); font-stretch: 150%; font-variant-numeric: tabular-nums; }
+.chutes__lista .resultado { font: 600 var(--text-sm)/1.2 var(--font-outlier); color: var(--color-muted); }
+.chutes__lista .is-certo .resultado { color: var(--color-success); }
+.chutes__vazio { padding-block: var(--space-sm); color: var(--color-muted); }
+
+.rodape { border-top: var(--rule-hair) solid var(--color-rule); padding-block: var(--space-lg); font-size: var(--text-sm); color: var(--color-ink-2); }
+.rodape a { text-decoration: underline 2px var(--color-accent); text-underline-offset: 0.2em; }
+.rodape a:hover { text-decoration-color: var(--color-ink); }
+.rodape a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+@media (max-width: 60rem) {
+  .jogo { grid-template-columns: minmax(0, 1fr); padding-block: var(--space-xl) var(--space-2xl); gap: var(--space-xl); }
+  .placar > div { padding-inline: var(--space-sm); }
+  .jacare { grid-template-columns: 6rem minmax(0, 1fr); }
+}
+@media (max-width: 40rem) {
+  .placar dd { font-size: var(--text-lg); }
+  .wordmark { font-size: var(--text-xl); }
+  .mesa h1 { font-size: var(--text-xl); }
+  .mesa__cabeca { margin-bottom: var(--space-md); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .peca, .croc__mandibula, .croc__pupila, .croc__palpebra { transition: opacity var(--dur-micro) linear; }
+  .peca.is-aberta { transform: none; }
+}

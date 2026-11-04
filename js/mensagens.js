@@ -47,19 +47,20 @@ window.FLAGX_MENSAGENS = {
   erro: [
     "{chute}? Errado. Fica {direcao}, a {distancia}.",
     "Nem perto. São {distancia}, segue {direcao}.",
-    "{chute}? Corajoso. Errado, mas corajoso.",
-    "Não é {chute}. Toma mais um pedaço, já que você insiste.",
+    "{chute}? Ai não né campeão.",
+    "Longe de ser {chute}. Pega mais uma dica que você está precisando.",
     "{chute}. Você jogou um dado ou pensou nisso?",
     "Errou. Eu sou um réptil e teria acertado.",
-    "Nem perto. Mais um pedaço por pura caridade.",
+    "Nem perto. Mais uma dica por pura caridade.",
     "{chute}, sério? Vou fingir que não vi.",
     "Não. E olha que eu torci por você. Pouco, mas torci.",
   ],
 
   // O jogador digitou algo que não é um país conhecido. Não gasta chute.
   nao_existe: [
-    "\"{chute}\" não é país. Nem no mapa que você desenhou na escola.",
-    "Não conheço nenhum país chamado \"{chute}\". E eu conheço muitos.",
+    "\"{chute}\" não é nem país no mapa que você desenhou na escola.",
+    "Eu conheço muitos paises, mas não conheço nenhum \"{chute}\".",
+    "Virou poliglota? Ta falando varias bobeiras pô",
     "Inventou um país agora? Escolhe um da lista, por favor.",
   ],
 
@@ -73,7 +74,7 @@ window.FLAGX_MENSAGENS = {
   // O jogador repetiu um chute desta rodada. Não gasta chute.
   repetido: [
     "Você já chutou {chute}. Continua errado, caso esteja curioso.",
-    "{chute} de novo? A bandeira não mudou de ideia.",
+    "{chute} de novo? A bandeira não mudou no ultimos 5 segundos.",
   ],
 
   // Acertou com 1 pedaço.

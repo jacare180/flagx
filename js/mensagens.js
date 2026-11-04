@@ -74,6 +74,25 @@ window.FLAGX_MENSAGENS = {
     "Não é {chute}, é {capital}. Pelo menos o país você acertou.",
   ],
 
+  // Contra o relógio: começo da partida (60 segundos, pedaços abrem sozinhos).
+  relogio_inicio: [
+    "Sessenta segundos. Os pedaços abrem sozinhos, então chuta logo.",
+    "Valendo! O relógio não espera e eu também não.",
+  ],
+
+  // Contra o relógio: a rodada passou sem acerto (desistiu ou abriu tudo e nada).
+  relogio_pulou: [
+    "Era {pais}. Próxima, rápido!",
+    "{pais}. Tic tac, sem tempo pra lamentar.",
+    "Passou. Era {pais}. Corre que ainda dá.",
+  ],
+
+  // Contra o relógio: acabou o tempo.
+  relogio_fim: [
+    "Tempo! {acertos} acertos e {pontos} pontos. Já vi tartaruga mais rápida.",
+    "Acabou o tempo. {pontos} pontos. Dá pra melhorar, e muito.",
+  ],
+
   // Chute errado e PERTO do país certo (menos de 1.500 km).
   erro_perto: [
     "{chute}? Tá quente. O país certo fica {direcao}, a {distancia}. Quase dá para ir a pé.",

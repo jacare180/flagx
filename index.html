@@ -21,6 +21,7 @@
         </a>
       </div>
       <dl class="placar" aria-label="Placar">
+        <div id="placar-tempo" hidden><dt>Tempo</dt><dd class="num" id="tempo">60</dd></div>
         <div id="placar-vidas" hidden><dt>Vidas</dt><dd class="num" id="vidas">3</dd></div>
         <div><dt>Pontos</dt><dd class="num" id="pontos">0</dd></div>
         <div><dt id="rotulo-sequencia">Sequência</dt><dd class="num" id="sequencia">0</dd></div>
@@ -38,6 +39,7 @@
             <legend class="visually-hidden">Modo de jogo</legend>
             <input type="radio" name="modo" id="m-classico" value="classico" checked><label for="m-classico">Clássico</label>
             <input type="radio" name="modo" id="m-sobrevivencia" value="sobrevivencia"><label for="m-sobrevivencia">Sobrevivência</label>
+            <input type="radio" name="modo" id="m-relogio" value="relogio"><label for="m-relogio">Contra o relógio</label>
           </fieldset>
           <fieldset class="seg" id="seg-regiao">
             <legend class="visually-hidden">Região</legend>

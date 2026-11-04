@@ -4,7 +4,6 @@ Ideias combinadas que ficaram para depois. Quando uma entrar no jogo, ela sai da
 
 ## Próximos modos
 
-- **Contra o relógio.** Os pedaços se revelam sozinhos a cada 2 ou 3 segundos e quanto mais cedo o acerto, mais pontos. Sem a dica de distância, para não quebrar o ritmo.
 - **Diário.** Uma bandeira por dia, igual para todo mundo, sempre no mundo todo. No fim, um resultado para compartilhar com quadradinhos, sem revelar a resposta.
 
 ## Ideias guardadas

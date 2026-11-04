@@ -72,6 +72,11 @@
   var MULTIPLICADOR_DIFICIL = 2;
   var BONUS_CAPITAL = 0.5;          // a capital certa vale mais 50% dos pontos da rodada
   var VIDAS_SOBREVIVENCIA = 3;
+  // Contra o relógio
+  var TEMPO_RELOGIO = 60;           // segundos de partida
+  var REVELAR_A_CADA = 2500;        // ms entre um pedaço e outro, revelados sozinhos
+  var PAUSA_ENTRE_RODADAS = 900;    // ms mostrando a resposta antes da próxima
+  var ESPERA_RELOGIO = 400;         // espera menor antes de mostrar a bandeira
   // Sobrevivência: começa só com os países mais populosos (os mais conhecidos)
   // e a cada acerto abre mais uma fatia da lista.
   var FAMA_INICIAL = 0.25;          // 25% mais populosos no começo
@@ -121,7 +126,7 @@
     chutes: $("lista-chutes"), chutesVazio: $("chutes-vazio"),
     pontos: $("pontos"), sequencia: $("sequencia"), recorde: $("recorde"),
     ajustes: $("ajustes"), dificil: $("ajuste-dificil"),
-    placarVidas: $("placar-vidas"), vidas: $("vidas"), rotuloSequencia: $("rotulo-sequencia"),
+    placarVidas: $("placar-vidas"), vidas: $("vidas"), placarTempo: $("placar-tempo"), tempo: $("tempo"), rotuloSequencia: $("rotulo-sequencia"),
     formCapital: $("form-capital"), capitalPergunta: $("capital-pergunta"), campoCapital: $("campo-capital"),
     botaoCapital: $("botao-capital"), capitalResultado: $("capital-resultado"),
   };
@@ -133,6 +138,7 @@
     ajustes: lerAjustes(),
     vidas: VIDAS_SOBREVIVENCIA, fimDeJogo: false, primeiraDaCorrida: true,
     ganhoRodada: 0, capitalRespondida: true,
+    tempo: TEMPO_RELOGIO, relogioAndando: false, cronometro: null, revelacao: null,
   };
   estado.recorde = lerRecorde();
 
@@ -174,10 +180,16 @@
   }
 
   function emSobrevivencia() { return estado.ajustes.modo === "sobrevivencia"; }
+  function emRelogio() { return estado.ajustes.modo === "relogio"; }
 
   // Cada modo tem o seu recorde: no clássico é a maior sequência, na sobrevivência
   // é o maior número de acertos numa corrida.
-  function chaveRecorde() { return emSobrevivencia() ? CHAVE_RECORDE + ".sobrevivencia" : CHAVE_RECORDE; }
+  // No relógio o recorde é a maior pontuação de uma partida.
+  function chaveRecorde() {
+    if (emSobrevivencia()) return CHAVE_RECORDE + ".sobrevivencia";
+    if (emRelogio()) return CHAVE_RECORDE + ".relogio";
+    return CHAVE_RECORDE;
+  }
 
   function lerRecorde() {
     try { return parseInt(localStorage.getItem(chaveRecorde()), 10) || 0; } catch (e) { return 0; }
@@ -193,7 +205,7 @@
       var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "{}");
       if (salvo && filtroDaRegiao(salvo.regiao)) padrao.regiao = salvo.regiao;
       if (salvo && salvo.dificil === true) padrao.dificil = true;
-      if (salvo && salvo.modo === "sobrevivencia") padrao.modo = "sobrevivencia";
+      if (salvo && (salvo.modo === "sobrevivencia" || salvo.modo === "relogio")) padrao.modo = salvo.modo;
     } catch (e) { /* sem armazenamento, usa o padrão */ }
     return padrao;
   }
@@ -319,11 +331,15 @@
     if (modo) modo.checked = true;
     el.jogo.setAttribute("data-modo", estado.ajustes.modo);
     el.placarVidas.hidden = !emSobrevivencia();
-    el.rotuloSequencia.textContent = emSobrevivencia() ? "Acertos" : "Sequência";
+    el.placarTempo.hidden = !emRelogio();
+    el.rotuloSequencia.textContent = emSobrevivencia() || emRelogio() ? "Acertos" : "Sequência";
   }
 
   // Começa uma corrida nova da sobrevivência (ou zera o placar ao trocar de modo).
   function iniciarCorrida() {
+    pararRelogio();
+    estado.tempo = TEMPO_RELOGIO;
+    estado.relogioAndando = false;
     estado.vidas = VIDAS_SOBREVIVENCIA;
     estado.fimDeJogo = false;
     estado.primeiraDaCorrida = true;
@@ -344,7 +360,7 @@
     salvarAjustes();
     aplicarAjustes();
     // Na sobrevivência qualquer mudança começa uma corrida nova; trocar de modo também zera o placar.
-    if (emSobrevivencia() || modoAntes !== estado.ajustes.modo) iniciarCorrida();
+    if (estado.ajustes.modo !== "classico" || modoAntes !== estado.ajustes.modo) iniciarCorrida();
     if (!estado.paises.length) return;
     montarPool();
     novaRodada();
@@ -409,6 +425,7 @@
 
   function novaRodada(tentativa) {
     tentativa = tentativa || 0;
+    pararRevelacao();
     var alvo = escolherAlvo();
 
     estado.alvo = alvo;
@@ -446,12 +463,17 @@
       travarForm(false);
       var abertura = "inicio";
       if (emSobrevivencia() && estado.primeiraDaCorrida) abertura = "sobrevivencia_inicio";
+      else if (emRelogio() && estado.primeiraDaCorrida) abertura = "relogio_inicio";
       else if (estado.ajustes.dificil) abertura = "inicio_dificil";
       estado.primeiraDaCorrida = false;
       falar(abertura, { pais: alvo.nome, vidas: estado.vidas }, "neutro", "inicio");
       el.campo.focus({ preventScroll: true });
+      if (emRelogio()) {
+        ligarRelogio();
+        estado.revelacao = setInterval(revelarSozinho, REVELAR_A_CADA);
+      }
     }
-    setTimeout(function () { esperou = true; comecar(); }, ESPERA_BANDEIRA);
+    setTimeout(function () { esperou = true; comecar(); }, emRelogio() ? ESPERA_RELOGIO : ESPERA_BANDEIRA);
     el.img.onload = function () { carregou = true; comecar(); };
     el.img.onerror = function () {
       if (estado.alvo !== alvo) return;
@@ -503,6 +525,7 @@
     el.sequencia.textContent = estado.sequencia;
     el.recorde.textContent = estado.recorde;
     el.vidas.textContent = estado.vidas;
+    el.tempo.textContent = estado.tempo;
   }
 
   function travarForm(travar) {
@@ -701,7 +724,8 @@
       perder("derrota", "zoando");
       return;
     }
-    abrirProxima();
+    // No relógio os pedaços abrem sozinhos; chute errado não abre mais um.
+    if (!emRelogio()) abrirProxima();
     var dados = { chute: pais.nome, pais: estado.alvo.nome };
     var categoria = "erro";
     if (dica) {
@@ -777,13 +801,14 @@
     var ganho = valorAtual();
     estado.pontos += ganho;
     estado.sequencia++;
-    if (estado.sequencia > estado.recorde) {
+    if (!emRelogio() && estado.sequencia > estado.recorde) {
       estado.recorde = estado.sequencia;
       salvarRecorde(estado.recorde);
     }
     var categoria = pedacos === 1 ? "acerto_genio" : pedacos <= 3 ? "acerto_bom" : "acerto_sofrido";
     falar(categoria, { pais: estado.alvo.nome, pedacos: pedacos, pontos: ganho }, "chocado");
     estado.ganhoRodada = ganho;
+    if (emRelogio()) { seguirNoRelogio(); return; }
     encerrar(
       "Acertou, é",
       "Com " + pedacos + (pedacos === 1 ? " pedaço" : " pedaços") + " à mostra. Mais " + ganho + " pontos."
@@ -792,6 +817,11 @@
   }
 
   function perder(categoria, humor) {
+    if (emRelogio()) {
+      falar("relogio_pulou", { pais: estado.alvo.nome }, humor, categoria);
+      seguirNoRelogio();
+      return;
+    }
     if (emSobrevivencia()) {
       estado.vidas--;
       if (estado.vidas <= 0) {
@@ -810,6 +840,66 @@
     estado.sequencia = 0;
     falar(categoria, { pais: estado.alvo.nome }, humor);
     encerrar("Era", "Sem pontos nesta rodada. A sequência voltou para zero.");
+  }
+
+  /* ---------- contra o relógio ---------- */
+
+  function ligarRelogio() {
+    if (estado.relogioAndando || estado.fimDeJogo) return;
+    estado.relogioAndando = true;
+    var fim = Date.now() + estado.tempo * 1000;
+    estado.cronometro = setInterval(function () {
+      estado.tempo = Math.max(0, Math.ceil((fim - Date.now()) / 1000));
+      el.tempo.textContent = estado.tempo;
+      if (estado.tempo <= 0) tempoEsgotado();
+    }, 200);
+  }
+
+  function pararRelogio() {
+    clearInterval(estado.cronometro);
+    pararRevelacao();
+    estado.relogioAndando = false;
+  }
+
+  function pararRevelacao() { clearInterval(estado.revelacao); }
+
+  // A cada intervalo abre mais um pedaço; com os seis abertos, a próxima passada pula a bandeira.
+  function revelarSozinho() {
+    if (estado.encerrada) return;
+    if (estado.abertas < TOTAL_PECAS) { abrirProxima(); return; }
+    perder("relogio_pulou", "zoando");
+  }
+
+  // Mostra a resposta por um instante e segue para a próxima, sem tela de fim de rodada.
+  function seguirNoRelogio() {
+    pararRevelacao();
+    estado.encerrada = true;
+    setEstado("pausa");
+    abrirTodas();
+    atualizarProgresso();
+    atualizarPlacar();
+    travarForm(true);
+    el.img.alt = T.alt + estado.alvo.nome;
+    var rodada = estado.alvo;
+    setTimeout(function () {
+      if (estado.fimDeJogo || !emRelogio() || estado.alvo !== rodada) return;
+      novaRodada();
+    }, PAUSA_ENTRE_RODADAS);
+  }
+
+  function tempoEsgotado() {
+    pararRelogio();
+    estado.fimDeJogo = true;
+    el.tempo.textContent = 0;
+    if (estado.pontos > estado.recorde) {
+      estado.recorde = estado.pontos;
+      salvarRecorde(estado.recorde);
+    }
+    falar("relogio_fim", { acertos: estado.sequencia, pontos: estado.pontos, pais: estado.alvo ? estado.alvo.nome : "" }, "zoando", "fim_de_jogo");
+    encerrar("Tempo esgotado. A última era",
+      "Você acertou " + estado.sequencia + (estado.sequencia === 1 ? " " + T.item : " " + T.itens) +
+      " e fez " + estado.pontos + " pontos em " + TEMPO_RELOGIO + " segundos.");
+    el.proxima.textContent = "Jogar de novo";
   }
 
   /* ---------- bônus da capital ---------- */

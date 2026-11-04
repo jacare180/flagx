@@ -54,6 +54,13 @@ window.FLAGX_MENSAGENS = {
     "Era {pais}. Ainda tem {vidas} vida(s), mas no seu ritmo não dura muito.",
   ],
 
+  // Sobrevivência: chute errado, perdeu uma vida e a rodada continua.
+  erro_vida: [
+    "{chute}? Errado. Lá se vai uma vida, sobraram {vidas}.",
+    "{chute} não. Um coração a menos. Eu tô contando.",
+    "Errou de novo, campeão. Só {vidas} coração(ões) separando você do vexame.",
+  ],
+
   // Sobrevivência: acabaram as vidas.
   fim_de_jogo: [
     "Era {pais}. Fim de jogo. {acertos} bandeiras, nada mal para quem chuta tanto.",
@@ -252,6 +259,11 @@ window.FLAGX_MENSAGENS_FUTEBOL = {
   perdeu_vida: [
     "Era {pais}. Lá se vai uma vida. Sobraram {vidas}.",
     "{pais}, campeão. Cartão vermelho para uma vida.",
+  ],
+
+  erro_vida: [
+    "{chute}? Errado. Cartão vermelho para uma vida, sobraram {vidas}.",
+    "{chute} não. Um coração a menos, e o VAR confirmou.",
   ],
 
   fim_de_jogo: [

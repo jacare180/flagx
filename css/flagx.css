@@ -37,6 +37,10 @@
 .placar > div:last-child { padding-right: 0; }
 .placar dt { font: 600 var(--text-sm)/1.2 var(--font-outlier); color: var(--color-muted); }
 .placar dd { margin: 0; font: var(--display-weight) var(--text-xl)/1.1 var(--font-display); font-stretch: 150%; }
+.coracoes { display: flex; gap: var(--space-2xs); align-items: center; min-height: 1.1em; }
+.coracao { fill: var(--color-error); stroke: var(--color-ink); stroke-width: 1.5; stroke-linejoin: round; transition: fill var(--dur-base, 200ms) ease; }
+.coracao.is-perdido { fill: var(--color-paper-3); }
+@media (prefers-reduced-motion: reduce) { .coracao { transition: none; } }
 
 /* the game grid */
 .jogo { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--space-2xl) var(--gap-columns); padding-block: var(--space-2xl) var(--space-3xl); }

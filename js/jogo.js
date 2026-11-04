@@ -71,6 +71,7 @@
   var MULTIPLICADOR_DIFICIL = 2;
   var BONUS_CAPITAL = 0.5;          // a capital certa vale mais 50% dos pontos da rodada
   var VIDAS_SOBREVIVENCIA = 3;
+  var ERROS_SEM_CUSTO = 0;          // Sobrevivência: chutes errados por rodada que não tiram vida (0 = todo erro tira)
   // Contra o relógio
   var TEMPO_RELOGIO = 60;           // segundos de partida
   var REVELAR_A_CADA = 2500;        // ms entre um pedaço e outro, revelados sozinhos
@@ -543,7 +544,9 @@
     el.pontos.textContent = estado.pontos;
     el.sequencia.textContent = estado.sequencia;
     el.recorde.textContent = estado.recorde;
-    el.vidas.textContent = estado.vidas;
+    var coracoes = el.vidas.querySelectorAll(".coracao");
+    for (var i = 0; i < coracoes.length; i++) coracoes[i].classList.toggle("is-perdido", i >= estado.vidas);
+    el.vidas.setAttribute("aria-label", estado.vidas + " de " + VIDAS_SOBREVIVENCIA + (VIDAS_SOBREVIVENCIA === 1 ? " vida" : " vidas"));
     el.tempo.textContent = estado.tempo;
   }
 
@@ -743,6 +746,13 @@
     var dica = calcularPista(pais, estado.alvo);
     registrarChute(pais, false, dica);
     estado.marcas.push(false);
+    var perdeuVida = false;
+    if (emSobrevivencia() && estado.marcas.filter(function (m) { return !m; }).length > ERROS_SEM_CUSTO) {
+      estado.vidas--;
+      atualizarPlacar();
+      if (estado.vidas <= 0) { fimDaCorrida("erro"); return; }
+      perdeuVida = true;
+    }
     if (estado.abertas >= TOTAL_PECAS) {
       perder("derrota", "zoando");
       return;
@@ -758,7 +768,12 @@
       categoria = dica.km < DISTANCIA_PERTO ? "erro_perto" : dica.km > DISTANCIA_LONGE ? "erro_longe" : "erro";
       if (!M[categoria] || !M[categoria].length) categoria = "erro";
     }
-    falar(categoria, dados, "zoando");
+    if (perdeuVida) {
+      dados.vidas = estado.vidas;
+      falar("erro_vida", dados, "zoando", categoria);
+    } else {
+      falar(categoria, dados, "zoando");
+    }
     el.campo.focus();
   }
 
@@ -856,15 +871,7 @@
     }
     if (emSobrevivencia()) {
       estado.vidas--;
-      if (estado.vidas <= 0) {
-        estado.fimDeJogo = true;
-        falar("fim_de_jogo", { pais: estado.alvo.nome, acertos: estado.sequencia, pontos: estado.pontos }, "zoando", categoria);
-        encerrar("Fim de jogo. Era",
-          "Você acertou " + estado.sequencia + (estado.sequencia === 1 ? " " + T.item : " " + T.itens) +
-          " e fez " + estado.pontos + " pontos.");
-        el.proxima.textContent = "Jogar de novo";
-        return;
-      }
+      if (estado.vidas <= 0) { fimDaCorrida(categoria); return; }
       falar("perdeu_vida", { pais: estado.alvo.nome, vidas: estado.vidas }, humor, categoria);
       encerrar("Era", "Você perdeu uma vida. " + (estado.vidas === 1 ? "Resta 1." : "Restam " + estado.vidas + "."));
       return;
@@ -872,6 +879,17 @@
     estado.sequencia = 0;
     falar(categoria, { pais: estado.alvo.nome }, humor);
     encerrar("Era", "Sem pontos nesta rodada. A sequência voltou para zero.");
+  }
+
+  // Sobrevivência: acabaram as vidas.
+  function fimDaCorrida(categoria) {
+    estado.vidas = 0;
+    estado.fimDeJogo = true;
+    falar("fim_de_jogo", { pais: estado.alvo.nome, acertos: estado.sequencia, pontos: estado.pontos }, "zoando", categoria);
+    encerrar("Fim de jogo. Era",
+      "Você acertou " + estado.sequencia + (estado.sequencia === 1 ? " " + T.item : " " + T.itens) +
+      " e fez " + estado.pontos + " pontos.");
+    el.proxima.textContent = "Jogar de novo";
   }
 
   /* ---------- contra o relógio ---------- */

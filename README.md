@@ -14,7 +14,7 @@ Como funciona
 * **Clássico:** uma bandeira por vez, pontos acumulando. Acertar com 1 pedaço vale 120 pontos e cada pedaço a mais tira 20.
 * **Contra o relógio:** 60 segundos. Os pedaços abrem sozinhos a cada 2,5 segundos e a próxima bandeira entra assim que você acerta. O recorde é a maior pontuação.
 * **Diário:** uma bandeira por dia, igual para todo mundo (o dia vira no horário de Brasília), sempre no mundo todo e sem modo difícil. Conta os dias seguidos de acerto e tem um botão para copiar o resultado com quadradinhos, sem revelar a resposta.
-* **Sobrevivência:** 3 vidas. Começa pelos países mais populosos (os mais conhecidos) e a cada acerto entram países menos famosos.
+* **Sobrevivência:** 3 vidas, mostradas como corações no placar. Cada chute errado ou desistência tira uma, e o coração fica cinza. Começa pelos países mais populosos (os mais conhecidos) e a cada acerto entram países menos famosos.
 * **Região:** mundo todo, África, Américas, Ásia, Europa ou Oceania.
 * **Difícil:** bandeira sem cor e espelhada, com 41 territórios a mais. Pontos em dobro.
 * **Dica:** cada chute errado mostra a distância, a direção no mapa-múndi e a proximidade.

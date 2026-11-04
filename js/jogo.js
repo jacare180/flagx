@@ -1,4 +1,4 @@
-/* Flagx: modo clássico, mundo todo. */
+/* Flagx: modo clássico, com filtro de região e modo difícil. */
 (function () {
   "use strict";
 
@@ -10,6 +10,14 @@
   var TOTAL_PECAS = 6;
   var ESPERA_BANDEIRA = 1000; // milissegundos antes de mostrar a bandeira e abrir o primeiro pedaço
   var CHAVE_RECORDE = "flagx.recorde";
+  var CHAVE_AJUSTES = "flagx.ajustes";
+  var MULTIPLICADOR_DIFICIL = 2;
+
+  // Territórios que usam a bandeira de outro país (impossíveis de acertar). Ficam fora do sorteio.
+  var BANDEIRA_REPETIDA = ["hm", "bl", "gp", "gf", "mf", "yt", "re", "pm", "wf", "sh", "um", "bv", "sj", "mq", "nc"];
+
+  // Regiões do jogo. A Antártida só aparece no mundo todo.
+  var REGIOES = { mundo: null, africa: "Africa", americas: "Americas", asia: "Asia", europa: "Europe", oceania: "Oceania" };
 
   // A API traz os nomes em português de Portugal. Aqui ficam os nomes usados no Brasil:
   // o primeiro aparece no jogo, os outros também valem como chute.
@@ -22,6 +30,9 @@
     tj: ["Tadjiquistão"], tt: ["Trinidad e Tobago"], vc: ["São Vicente e Granadinas"], vn: ["Vietnã"],
     ye: ["Iêmen"], zw: ["Zimbábue"], us: ["Estados Unidos", "EUA"], va: ["Vaticano"],
     ae: ["Emirados Árabes Unidos", "Emirados Árabes"], sc: ["Seicheles", "Seychelles"],
+    gl: ["Groenlândia"], ky: ["Ilhas Cayman", "Ilhas Caimã"], cw: ["Curaçao", "Curação"],
+    fo: ["Ilhas Feroé", "Ilhas Faroé"], tw: ["Taiwan", "Formosa"], ax: ["Ilhas Åland", "Åland"],
+    fk: ["Ilhas Malvinas", "Malvinas", "Falklands"], ps: ["Palestina"],
   };
 
   var M = window.FLAGX_MENSAGENS || {};
@@ -36,12 +47,14 @@
     falha: $("falha"), tentar: $("botao-tentar"),
     chutes: $("lista-chutes"), chutesVazio: $("chutes-vazio"),
     pontos: $("pontos"), sequencia: $("sequencia"), recorde: $("recorde"),
+    ajustes: $("ajustes"), dificil: $("ajuste-dificil"),
   };
 
   var estado = {
     paises: [], pool: [], indice: new Map(), recentes: [],
     alvo: null, ordem: [], abertas: 0, chutes: [], encerrada: true,
     pontos: 0, sequencia: 0, recorde: lerRecorde(), ultimaFala: {},
+    ajustes: lerAjustes(),
   };
 
   /* ---------- utilidades ---------- */
@@ -88,6 +101,20 @@
     try { localStorage.setItem(CHAVE_RECORDE, String(valor)); } catch (e) { /* sem armazenamento, segue o jogo */ }
   }
 
+  function lerAjustes() {
+    var padrao = { regiao: "mundo", dificil: false };
+    try {
+      var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "{}");
+      if (salvo && Object.prototype.hasOwnProperty.call(REGIOES, salvo.regiao)) padrao.regiao = salvo.regiao;
+      if (salvo && salvo.dificil === true) padrao.dificil = true;
+    } catch (e) { /* sem armazenamento, usa o padrão */ }
+    return padrao;
+  }
+
+  function salvarAjustes() {
+    try { localStorage.setItem(CHAVE_AJUSTES, JSON.stringify(estado.ajustes)); } catch (e) { /* segue sem salvar */ }
+  }
+
   function setEstado(nome) { el.jogo.setAttribute("data-estado", nome); }
 
   /* ---------- dados ---------- */
@@ -127,8 +154,38 @@
 
     estado.paises = paises;
     estado.indice = indice;
-    estado.pool = paises.filter(function (p) { return p.independente; });
+    montarPool();
+  }
 
+  // Quem pode ser sorteado: países independentes no modo normal; no difícil entram também
+  // os territórios com bandeira própria. Depois filtra pela região escolhida.
+  function montarPool() {
+    var regiao = REGIOES[estado.ajustes.regiao];
+    var dificil = estado.ajustes.dificil;
+    estado.pool = estado.paises.filter(function (p) {
+      if (BANDEIRA_REPETIDA.indexOf(p.codigo) !== -1) return false;
+      if (!p.independente && !dificil) return false;
+      return regiao ? p.regiao === regiao : true;
+    });
+    estado.recentes = [];
+  }
+
+  function aplicarAjustes() {
+    el.jogo.setAttribute("data-modo-dificil", estado.ajustes.dificil ? "sim" : "nao");
+    el.dificil.checked = estado.ajustes.dificil;
+    var marcado = el.ajustes.querySelector('input[name="regiao"][value="' + estado.ajustes.regiao + '"]');
+    if (marcado) marcado.checked = true;
+  }
+
+  function mudarAjustes() {
+    var regiao = el.ajustes.querySelector('input[name="regiao"]:checked');
+    estado.ajustes.regiao = regiao ? regiao.value : "mundo";
+    estado.ajustes.dificil = el.dificil.checked;
+    salvarAjustes();
+    aplicarAjustes();
+    if (!estado.paises.length) return;
+    montarPool();
+    novaRodada();
   }
 
   function carregarPaises() {
@@ -214,7 +271,7 @@
       setEstado("jogando");
       abrirProxima();
       travarForm(false);
-      falar("inicio", { pais: alvo.nome }, "neutro");
+      falar(estado.ajustes.dificil && M.inicio_dificil && M.inicio_dificil.length ? "inicio_dificil" : "inicio", { pais: alvo.nome }, "neutro");
       el.campo.focus({ preventScroll: true });
     }
     setTimeout(function () { esperou = true; comecar(); }, ESPERA_BANDEIRA);
@@ -249,7 +306,9 @@
   }
 
   function valorAtual() {
-    return estado.abertas ? (TOTAL_PECAS + 1 - estado.abertas) * PONTOS_POR_PECA : 0;
+    if (!estado.abertas) return 0;
+    var base = (TOTAL_PECAS + 1 - estado.abertas) * PONTOS_POR_PECA;
+    return estado.ajustes.dificil ? base * MULTIPLICADOR_DIFICIL : base;
   }
 
   function atualizarProgresso() {
@@ -581,6 +640,9 @@
   el.proxima.addEventListener("click", function () { novaRodada(); });
   el.tentar.addEventListener("click", carregarPaises);
 
+  el.ajustes.addEventListener("change", mudarAjustes);
+
+  aplicarAjustes();
   atualizarPlacar();
   carregarPaises();
 })();

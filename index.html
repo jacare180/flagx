@@ -26,7 +26,22 @@
     <section class="mesa" aria-labelledby="titulo-mesa">
       <div class="mesa__cabeca">
         <h1 id="titulo-mesa">Que bandeira é essa?</h1>
-        <p class="modo">Modo clássico, mundo todo</p>
+        <form class="ajustes" id="ajustes" aria-label="Ajustes do jogo">
+          <fieldset class="seg">
+            <legend class="visually-hidden">Região</legend>
+            <input type="radio" name="regiao" id="r-mundo" value="mundo" checked><label for="r-mundo">Mundo</label>
+            <input type="radio" name="regiao" id="r-africa" value="africa"><label for="r-africa">África</label>
+            <input type="radio" name="regiao" id="r-americas" value="americas"><label for="r-americas">Américas</label>
+            <input type="radio" name="regiao" id="r-asia" value="asia"><label for="r-asia">Ásia</label>
+            <input type="radio" name="regiao" id="r-europa" value="europa"><label for="r-europa">Europa</label>
+            <input type="radio" name="regiao" id="r-oceania" value="oceania"><label for="r-oceania">Oceania</label>
+          </fieldset>
+          <div class="dificil">
+            <input type="checkbox" id="ajuste-dificil" name="dificil" aria-describedby="dificil-explica">
+            <label for="ajuste-dificil">Difícil</label>
+            <span class="dificil__explica" id="dificil-explica">Sem cor, espelhada, com territórios. Pontos em dobro.</span>
+          </div>
+        </form>
       </div>
 
       <figure class="quadro" id="quadro" aria-describedby="progresso">

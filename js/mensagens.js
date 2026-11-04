@@ -29,6 +29,13 @@ window.FLAGX_MENSAGENS = {
     "Essa é fácil. Mentira, não faço ideia. Mas você deveria saber.",
   ],
 
+  // Início de rodada no modo difícil (bandeira em preto e branco e espelhada, pontos em dobro).
+  inicio_dificil: [
+    "Modo difícil. Sem cor e de trás pra frente. Boa sorte, vai precisar.",
+    "Preto, branco e espelhada. Quero ver agora, sabichão.",
+    "Pontos em dobro, vergonha em dobro também.",
+  ],
+
   // Chute errado e PERTO do país certo (menos de 1.500 km).
   erro_perto: [
     "{chute}? Tá quente. O país certo fica {direcao}, a {distancia}. Quase dá para ir a pé.",

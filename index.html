@@ -40,6 +40,7 @@
             <input type="radio" name="modo" id="m-classico" value="classico" checked><label for="m-classico">Clássico</label>
             <input type="radio" name="modo" id="m-sobrevivencia" value="sobrevivencia"><label for="m-sobrevivencia">Sobrevivência</label>
             <input type="radio" name="modo" id="m-relogio" value="relogio"><label for="m-relogio">Contra o relógio</label>
+            <input type="radio" name="modo" id="m-diario" value="diario"><label for="m-diario">Diário</label>
           </fieldset>
           <fieldset class="seg" id="seg-regiao">
             <legend class="visually-hidden">Região</legend>
@@ -136,6 +137,8 @@
           <p class="capital__resultado" id="capital-resultado" role="status"></p>
         </form>
         <button class="btn btn--primario" id="botao-proxima" type="button">Próxima bandeira</button>
+        <button class="btn btn--primario" id="botao-compartilhar" type="button" hidden>Copiar resultado</button>
+        <p class="compartilhar__aviso" id="compartilhar-aviso" role="status"></p>
       </div>
 
       <div class="falha" id="falha" hidden>

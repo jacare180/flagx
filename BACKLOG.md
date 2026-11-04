@@ -2,10 +2,6 @@
 
 Ideias combinadas que ficaram para depois. Quando uma entrar no jogo, ela sai daqui e vai para o README.
 
-## Próximos modos
-
-- **Diário.** Uma bandeira por dia, igual para todo mundo, sempre no mundo todo. No fim, um resultado para compartilhar com quadradinhos, sem revelar a resposta.
-
 ## Ideias guardadas
 
 - **Modo hardcore com bandeiras de capitais.** Não existe API pronta. A fonte mais próxima é o repositório [timondev/flags](https://github.com/timondev/flags), com bandeiras de cidades tiradas da Wikimedia Commons (a maioria em domínio público). Antes de decidir, levantar quantas das ~195 capitais têm bandeira lá. Riscos: muitas capitais não têm bandeira oficial e várias são só um brasão em fundo branco.

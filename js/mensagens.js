@@ -93,6 +93,18 @@ window.FLAGX_MENSAGENS = {
     "Acabou o tempo. {pontos} pontos. Dá pra melhorar, e muito.",
   ],
 
+  // Diário: começo da bandeira do dia (igual para todo mundo).
+  diario_inicio: [
+    "Bandeira do dia. Todo mundo está vendo a mesma. Não passa vergonha.",
+    "Diário valendo. Uma chance só, amanhã tem outra.",
+  ],
+
+  // Diário: a pessoa já jogou hoje.
+  diario_jogado: [
+    "Você já jogou hoje. Ansiedade é isso aí. Volta amanhã.",
+    "Uma por dia, campeão. A de hoje era {pais}.",
+  ],
+
   // Chute errado e PERTO do país certo (menos de 1.500 km).
   erro_perto: [
     "{chute}? Tá quente. O país certo fica {direcao}, a {distancia}. Quase dá para ir a pé.",

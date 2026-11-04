@@ -127,6 +127,7 @@
     pontos: $("pontos"), sequencia: $("sequencia"), recorde: $("recorde"),
     ajustes: $("ajustes"), dificil: $("ajuste-dificil"),
     placarVidas: $("placar-vidas"), vidas: $("vidas"), placarTempo: $("placar-tempo"), tempo: $("tempo"), rotuloSequencia: $("rotulo-sequencia"),
+    compartilhar: $("botao-compartilhar"), compartilharAviso: $("compartilhar-aviso"),
     formCapital: $("form-capital"), capitalPergunta: $("capital-pergunta"), campoCapital: $("campo-capital"),
     botaoCapital: $("botao-capital"), capitalResultado: $("capital-resultado"),
   };
@@ -139,6 +140,7 @@
     vidas: VIDAS_SOBREVIVENCIA, fimDeJogo: false, primeiraDaCorrida: true,
     ganhoRodada: 0, capitalRespondida: true,
     tempo: TEMPO_RELOGIO, relogioAndando: false, cronometro: null, revelacao: null,
+    marcas: [],
   };
   estado.recorde = lerRecorde();
 
@@ -152,10 +154,11 @@
 
   function sortear(lista) { return lista[Math.floor(Math.random() * lista.length)]; }
 
-  function embaralhar(lista) {
+  function embaralhar(lista, aleatorio) {
+    aleatorio = aleatorio || Math.random;
     var a = lista.slice();
     for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
+      var j = Math.floor(aleatorio() * (i + 1));
       var t = a[i]; a[i] = a[j]; a[j] = t;
     }
     return a;
@@ -181,6 +184,7 @@
 
   function emSobrevivencia() { return estado.ajustes.modo === "sobrevivencia"; }
   function emRelogio() { return estado.ajustes.modo === "relogio"; }
+  function emDiario() { return estado.ajustes.modo === "diario"; }
 
   // Cada modo tem o seu recorde: no clássico é a maior sequência, na sobrevivência
   // é o maior número de acertos numa corrida.
@@ -205,7 +209,7 @@
       var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "{}");
       if (salvo && filtroDaRegiao(salvo.regiao)) padrao.regiao = salvo.regiao;
       if (salvo && salvo.dificil === true) padrao.dificil = true;
-      if (salvo && (salvo.modo === "sobrevivencia" || salvo.modo === "relogio")) padrao.modo = salvo.modo;
+      if (salvo && ["sobrevivencia", "relogio", "diario"].indexOf(salvo.modo) !== -1) padrao.modo = salvo.modo;
     } catch (e) { /* sem armazenamento, usa o padrão */ }
     return padrao;
   }
@@ -282,8 +286,8 @@
   // Quem pode ser sorteado: países independentes no modo normal; no difícil entram também
   // os territórios com bandeira própria. Depois filtra pela região escolhida.
   function montarPool() {
-    var regiao = (filtroDaRegiao(estado.ajustes.regiao) || {}).filtro;
-    var dificil = estado.ajustes.dificil;
+    var regiao = emDiario() ? null : (filtroDaRegiao(estado.ajustes.regiao) || {}).filtro;
+    var dificil = emDiario() ? false : estado.ajustes.dificil;
     estado.pool = estado.paises.filter(function (p) {
       if (TEMA === "bandeiras" && BANDEIRA_REPETIDA.indexOf(p.codigo) !== -1) return false;
       if (!p.independente && !dificil) return false;
@@ -323,7 +327,10 @@
   }
 
   function aplicarAjustes() {
-    el.jogo.setAttribute("data-modo-dificil", estado.ajustes.dificil ? "sim" : "nao");
+    el.jogo.setAttribute("data-modo-dificil", estado.ajustes.dificil && !emDiario() ? "sim" : "nao");
+    // O diário é igual para todo mundo: sem escolha de região nem modo difícil.
+    $("seg-regiao").disabled = emDiario();
+    el.dificil.disabled = emDiario();
     el.dificil.checked = estado.ajustes.dificil;
     var marcado = el.ajustes.querySelector('input[name="regiao"][value="' + estado.ajustes.regiao + '"]');
     if (marcado) marcado.checked = true;
@@ -332,11 +339,13 @@
     el.jogo.setAttribute("data-modo", estado.ajustes.modo);
     el.placarVidas.hidden = !emSobrevivencia();
     el.placarTempo.hidden = !emRelogio();
-    el.rotuloSequencia.textContent = emSobrevivencia() || emRelogio() ? "Acertos" : "Sequência";
+    el.rotuloSequencia.textContent = emSobrevivencia() || emRelogio() ? "Acertos" : emDiario() ? "Dias seguidos" : "Sequência";
   }
 
   // Começa uma corrida nova da sobrevivência (ou zera o placar ao trocar de modo).
   function iniciarCorrida() {
+    el.compartilhar.hidden = true;
+    el.proxima.hidden = false;
     pararRelogio();
     estado.tempo = TEMPO_RELOGIO;
     estado.relogioAndando = false;
@@ -346,6 +355,11 @@
     estado.pontos = 0;
     estado.sequencia = 0;
     estado.recorde = lerRecorde();
+    if (emDiario()) {
+      var d = lerDiario();
+      estado.sequencia = sequenciaDiariaValida(d);
+      estado.recorde = d.recorde || 0;
+    }
     el.proxima.textContent = T.proxima;
     atualizarPlacar();
   }
@@ -426,10 +440,15 @@
   function novaRodada(tentativa) {
     tentativa = tentativa || 0;
     pararRevelacao();
-    var alvo = escolherAlvo();
+    if (emDiario()) {
+      var jogado = lerDiario().jogos[dataHoje()];
+      if (jogado) { mostrarDiarioJogado(jogado); return; }
+    }
+    var alvo = emDiario() ? alvoDoDia() : escolherAlvo();
 
     estado.alvo = alvo;
-    estado.ordem = embaralhar([1, 2, 3, 4, 5, 6]);
+    estado.ordem = emDiario() ? embaralhar([1, 2, 3, 4, 5, 6], geradorDoDia("ordem")) : embaralhar([1, 2, 3, 4, 5, 6]);
+    estado.marcas = [];
     estado.abertas = 0;
     estado.chutes = [];
     estado.encerrada = false;
@@ -464,6 +483,7 @@
       var abertura = "inicio";
       if (emSobrevivencia() && estado.primeiraDaCorrida) abertura = "sobrevivencia_inicio";
       else if (emRelogio() && estado.primeiraDaCorrida) abertura = "relogio_inicio";
+      else if (emDiario()) abertura = "diario_inicio";
       else if (estado.ajustes.dificil) abertura = "inicio_dificil";
       estado.primeiraDaCorrida = false;
       falar(abertura, { pais: alvo.nome, vidas: estado.vidas }, "neutro", "inicio");
@@ -512,7 +532,7 @@
   function valorAtual() {
     if (!estado.abertas) return 0;
     var base = (TOTAL_PECAS + 1 - estado.abertas) * PONTOS_POR_PECA;
-    return estado.ajustes.dificil ? base * MULTIPLICADOR_DIFICIL : base;
+    return estado.ajustes.dificil && !emDiario() ? base * MULTIPLICADOR_DIFICIL : base;
   }
 
   function atualizarProgresso() {
@@ -713,6 +733,7 @@
     estado.chutes.push(pais.codigo);
 
     if (pais.codigo === estado.alvo.codigo) {
+      estado.marcas.push(true);
       registrarChute(pais, true);
       vencer();
       return;
@@ -720,6 +741,7 @@
 
     var dica = calcularPista(pais, estado.alvo);
     registrarChute(pais, false, dica);
+    estado.marcas.push(false);
     if (estado.abertas >= TOTAL_PECAS) {
       perder("derrota", "zoando");
       return;
@@ -800,8 +822,9 @@
     var pedacos = estado.abertas;
     var ganho = valorAtual();
     estado.pontos += ganho;
-    estado.sequencia++;
-    if (!emRelogio() && estado.sequencia > estado.recorde) {
+    if (emDiario()) registrarDiario(true, pedacos);
+    else estado.sequencia++;
+    if (!emRelogio() && !emDiario() && estado.sequencia > estado.recorde) {
       estado.recorde = estado.sequencia;
       salvarRecorde(estado.recorde);
     }
@@ -814,9 +837,17 @@
       "Com " + pedacos + (pedacos === 1 ? " pedaço" : " pedaços") + " à mostra. Mais " + ganho + " pontos."
     );
     perguntarCapital();
+    if (emDiario()) mostrarCompartilhar();
   }
 
   function perder(categoria, humor) {
+    if (emDiario()) {
+      registrarDiario(false, estado.abertas);
+      falar(categoria, { pais: estado.alvo.nome }, humor);
+      encerrar("Hoje era", "Não foi dessa vez. Amanhã tem outra.");
+      mostrarCompartilhar();
+      return;
+    }
     if (emRelogio()) {
       falar("relogio_pulou", { pais: estado.alvo.nome }, humor, categoria);
       seguirNoRelogio();
@@ -902,6 +933,145 @@
     el.proxima.textContent = "Jogar de novo";
   }
 
+  /* ---------- diário ---------- */
+
+  var CHAVE_DIARIO = T.prefixo + ".diario";
+
+  // Data no horário de Brasília, para o dia virar igual para todo mundo aqui.
+  function dataHoje() {
+    try {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    } catch (e) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }
+
+  function diaAnterior(data) {
+    var d = new Date(data + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function dataBonita(data) { var p = data.split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
+
+  // Gerador de números com semente: o mesmo dia dá o mesmo sorteio em qualquer aparelho.
+  function geradorDoDia(extra) {
+    var texto = "flagx-" + TEMA + "-" + dataHoje() + "-" + (extra || "");
+    var h = 2166136261;
+    for (var i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 16777619);
+    var semente = h >>> 0;
+    return function () {
+      semente = (semente + 0x6D2B79F5) | 0;
+      var t = Math.imul(semente ^ (semente >>> 15), 1 | semente);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function alvoDoDia() {
+    var lista = estado.pool.slice().sort(function (a, b) { return a.codigo < b.codigo ? -1 : 1; });
+    return lista[Math.floor(geradorDoDia("alvo")() * lista.length)];
+  }
+
+  function lerDiario() {
+    var vazio = { jogos: {}, sequencia: 0, recorde: 0, ultimaVitoria: null };
+    try {
+      var d = JSON.parse(localStorage.getItem(CHAVE_DIARIO) || "null");
+      if (d && d.jogos) return d;
+    } catch (e) { /* sem armazenamento */ }
+    return vazio;
+  }
+
+  // A sequência só vale se a última vitória foi hoje ou ontem.
+  function sequenciaDiariaValida(d) {
+    var hoje = dataHoje();
+    return d.ultimaVitoria === hoje || d.ultimaVitoria === diaAnterior(hoje) ? d.sequencia || 0 : 0;
+  }
+
+  function registrarDiario(acertou, pedacos) {
+    var d = lerDiario();
+    var hoje = dataHoje();
+    if (acertou) {
+      d.sequencia = d.ultimaVitoria === diaAnterior(hoje) ? (d.sequencia || 0) + 1 : 1;
+      d.ultimaVitoria = hoje;
+      d.recorde = Math.max(d.recorde || 0, d.sequencia);
+    } else {
+      d.sequencia = 0;
+    }
+    d.jogos[hoje] = { acertou: acertou, pedacos: pedacos, marcas: estado.marcas.slice(), codigo: estado.alvo.codigo, pontos: estado.pontos };
+    // guarda só os últimos 30 dias
+    Object.keys(d.jogos).sort().slice(0, -30).forEach(function (k) { delete d.jogos[k]; });
+    try { localStorage.setItem(CHAVE_DIARIO, JSON.stringify(d)); } catch (e) { /* segue sem salvar */ }
+    estado.sequencia = d.sequencia;
+    estado.recorde = d.recorde || 0;
+    atualizarPlacar();
+  }
+
+  function textoDoResultado(jogo) {
+    var quadrados = jogo.marcas.map(function (ok) { return ok ? "🟩" : "🟥"; }).join("");
+    var linha = jogo.acertou
+      ? "Acertei com " + jogo.pedacos + " de 6 pedaços."
+      : "Não acertei hoje.";
+    var endereco = location.origin + location.pathname + (TEMA === "futebol" ? "?tema=futebol" : "");
+    return (TEMA === "futebol" ? "Flagx Futebol" : "Flagx") + " Diário " + dataBonita(dataHoje()) + "\n" +
+      (quadrados ? quadrados + "\n" : "") + linha + "\n" + endereco;
+  }
+
+  function mostrarCompartilhar() {
+    el.proxima.hidden = true;
+    el.compartilhar.hidden = false;
+    el.compartilharAviso.textContent = "Volte amanhã para " + (TEMA === "futebol" ? "um novo escudo." : "uma nova bandeira.");
+  }
+
+  // Já jogou hoje: mostra o resultado salvo em vez de uma rodada nova.
+  function mostrarDiarioJogado(jogo) {
+    var alvo = estado.paises.filter(function (p) { return p.codigo === jogo.codigo; })[0];
+    if (!alvo) return;
+    estado.alvo = alvo;
+    estado.marcas = jogo.marcas || [];
+    estado.pontos = jogo.pontos || 0;
+    estado.encerrada = true;
+    el.chutes.replaceChildren();
+    el.chutesVazio.hidden = false;
+    estado.abertas = 0;
+    estado.ordem = [1, 2, 3, 4, 5, 6];
+    el.img.hidden = true;
+    el.img.onload = function () {
+      var w = el.img.naturalWidth || 3, h = el.img.naturalHeight || 2;
+      if (alvo.proporcao) { w = alvo.proporcao[0]; h = alvo.proporcao[1]; }
+      el.quadro.style.setProperty("--proporcao", w + " / " + h);
+      el.img.hidden = false;
+    };
+    el.img.onerror = null;
+    if (TEMA === "futebol") { el.img.removeAttribute("srcset"); el.img.src = "escudos/" + alvo.codigo + ".svg"; }
+    else { el.img.srcset = CDN_BANDEIRAS + "w1280/" + alvo.codigo + ".png 2x"; el.img.src = CDN_BANDEIRAS + "w640/" + alvo.codigo + ".png"; }
+    falar("diario_jogado", { pais: alvo.nome }, "desdem", "inicio");
+    encerrar(jogo.acertou ? "Hoje você acertou, era" : "Hoje era",
+      jogo.acertou ? "Com " + jogo.pedacos + (jogo.pedacos === 1 ? " pedaço" : " pedaços") + " à mostra." : "Não foi dessa vez.");
+    mostrarCompartilhar();
+  }
+
+  function copiarResultado() {
+    var jogo = lerDiario().jogos[dataHoje()];
+    if (!jogo) return;
+    var texto = textoDoResultado(jogo);
+    function ok() { el.compartilharAviso.textContent = "Resultado copiado. É só colar onde quiser."; }
+    function manual() {
+      var area = document.createElement("textarea");
+      area.value = texto;
+      area.setAttribute("readonly", "");
+      area.className = "visually-hidden";
+      document.body.appendChild(area);
+      area.select();
+      var deu = false;
+      try { deu = document.execCommand("copy"); } catch (e) { deu = false; }
+      area.remove();
+      if (deu) ok(); else el.compartilharAviso.textContent = texto;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(ok, manual);
+    else manual();
+  }
+
   /* ---------- bônus da capital ---------- */
 
   function perguntarCapital() {
@@ -983,6 +1153,7 @@
     novaRodada();
   });
   el.formCapital.addEventListener("submit", responderCapital);
+  el.compartilhar.addEventListener("click", copiarResultado);
   el.campoCapital.addEventListener("input", function () {
     el.campoCapital.removeAttribute("aria-invalid");
     if (!estado.capitalRespondida) el.capitalResultado.textContent = "";
@@ -993,6 +1164,6 @@
 
   aplicarTema();
   aplicarAjustes();
-  atualizarPlacar();
+  iniciarCorrida();
   carregarPaises();
 })();

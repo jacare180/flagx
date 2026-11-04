@@ -4,13 +4,71 @@
 
   // Dados dos países guardados no próprio jogo (projeto mledoze/countries, licença ODbL).
   // A API REST Countries v3.1 foi desativada, por isso não dependemos mais dela.
-  var API_PAISES = "dados/paises.json";
   var CDN_BANDEIRAS = "https://flagcdn.com/";
+
+  // O mesmo jogo serve para bandeiras e para escudos de futebol (?tema=futebol na URL).
+  var TEMA = /(?:^|[?&])tema=futebol(?:&|$)/.test(location.search) ? "futebol" : "bandeiras";
+  var TEMAS = {
+    bandeiras: {
+      dados: "dados/paises.json",
+      prefixo: "flagx",
+      titulo: "Que bandeira é essa?",
+      pagina: "Flagx: adivinhe a bandeira em seis pedaços",
+      item: "bandeira", itens: "bandeiras",
+      proxima: "Próxima bandeira",
+      placeholder: "Digite um país",
+      digiteNome: "Digite o nome de um país.",
+      listaTodos: "Todos os países", listaFiltrada: "Países com esse nome",
+      alt: "Bandeira de ",
+      bonus: "Vale 50% de bônus: qual é a capital?",
+      bonusCerto: "Isso, {r}. Mais {p} pontos de bônus.", bonusErrado: "Não. A capital é {r}.",
+      explicaDificil: "Sem cor, espelhada, com territórios. Pontos em dobro.",
+      regiaoPadrao: "mundo",
+      regioes: [
+        { valor: "mundo", rotulo: "Mundo", filtro: null },
+        { valor: "africa", rotulo: "África", filtro: "Africa" },
+        { valor: "americas", rotulo: "Américas", filtro: "Americas" },
+        { valor: "asia", rotulo: "Ásia", filtro: "Asia" },
+        { valor: "europa", rotulo: "Europa", filtro: "Europe" },
+        { valor: "oceania", rotulo: "Oceania", filtro: "Oceania" },
+      ],
+      creditos: 'Bandeiras de <a href="https://flagcdn.com">FlagCDN</a>. Dados dos países de <a href="https://github.com/mledoze/countries">mledoze/countries</a> (licença ODbL).',
+      trocaPara: "futebol", trocaRotulo: "Trocar para escudos de futebol",
+    },
+    futebol: {
+      dados: "dados/clubes.json",
+      prefixo: "flagx.futebol",
+      titulo: "Que escudo é esse?",
+      pagina: "Flagx Futebol: adivinhe o escudo em seis pedaços",
+      item: "escudo", itens: "escudos",
+      proxima: "Próximo escudo",
+      placeholder: "Digite um clube",
+      digiteNome: "Digite o nome de um clube.",
+      listaTodos: "Todos os clubes", listaFiltrada: "Clubes com esse nome",
+      alt: "Escudo do ",
+      bonus: "Vale 50% de bônus: de que cidade é o clube?",
+      bonusCerto: "Isso, {r}. Mais {p} pontos de bônus.", bonusErrado: "Não. O clube é de {r}.",
+      explicaDificil: "Sem cor e espelhado. Pontos em dobro.",
+      regiaoPadrao: "todos",
+      regioes: [
+        { valor: "todos", rotulo: "Todos", filtro: null },
+        { valor: "inglaterra", rotulo: "Inglaterra", filtro: "inglaterra" },
+        { valor: "espanha", rotulo: "Espanha", filtro: "espanha" },
+        { valor: "italia", rotulo: "Itália", filtro: "italia" },
+        { valor: "alemanha", rotulo: "Alemanha", filtro: "alemanha" },
+        { valor: "franca", rotulo: "França", filtro: "franca" },
+        { valor: "argentina", rotulo: "Argentina", filtro: "argentina" },
+      ],
+      creditos: 'Escudos da coleção <a href="https://github.com/FCLOGO/fclogo.top">FCLOGO</a>, para uso pessoal. Os escudos são marcas dos clubes.',
+      trocaPara: "bandeiras", trocaRotulo: "Trocar para bandeiras",
+    },
+  };
+  var T = TEMAS[TEMA];
   var PONTOS_POR_PECA = 20;
   var TOTAL_PECAS = 6;
   var ESPERA_BANDEIRA = 1000; // milissegundos antes de mostrar a bandeira e abrir o primeiro pedaço
-  var CHAVE_RECORDE = "flagx.recorde";
-  var CHAVE_AJUSTES = "flagx.ajustes";
+  var CHAVE_RECORDE = T.prefixo + ".recorde";
+  var CHAVE_AJUSTES = T.prefixo + ".ajustes";
   var MULTIPLICADOR_DIFICIL = 2;
   var BONUS_CAPITAL = 0.5;          // a capital certa vale mais 50% dos pontos da rodada
   var VIDAS_SOBREVIVENCIA = 3;
@@ -24,7 +82,10 @@
   var BANDEIRA_REPETIDA = ["hm", "bl", "gp", "gf", "mf", "yt", "re", "pm", "wf", "sh", "um", "bv", "sj", "mq", "nc"];
 
   // Regiões do jogo. A Antártida só aparece no mundo todo.
-  var REGIOES = { mundo: null, africa: "Africa", americas: "Americas", asia: "Asia", europa: "Europe", oceania: "Oceania" };
+  function filtroDaRegiao(valor) {
+    for (var i = 0; i < T.regioes.length; i++) if (T.regioes[i].valor === valor) return T.regioes[i];
+    return null;
+  }
 
   // A API traz os nomes em português de Portugal. Aqui ficam os nomes usados no Brasil:
   // o primeiro aparece no jogo, os outros também valem como chute.
@@ -42,7 +103,12 @@
     fk: ["Ilhas Malvinas", "Malvinas", "Falklands"], ps: ["Palestina"],
   };
 
-  var M = window.FLAGX_MENSAGENS || {};
+  // No futebol, as falas de FLAGX_MENSAGENS_FUTEBOL substituem as de mesmo nome.
+  var M = {};
+  [window.FLAGX_MENSAGENS, TEMA === "futebol" ? window.FLAGX_MENSAGENS_FUTEBOL : null].forEach(function (fonte) {
+    if (!fonte) return;
+    Object.keys(fonte).forEach(function (k) { M[k] = fonte[k]; });
+  });
   var $ = function (id) { return document.getElementById(id); };
 
   var el = {
@@ -122,10 +188,10 @@
   }
 
   function lerAjustes() {
-    var padrao = { modo: "classico", regiao: "mundo", dificil: false };
+    var padrao = { modo: "classico", regiao: T.regiaoPadrao, dificil: false };
     try {
       var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "{}");
-      if (salvo && Object.prototype.hasOwnProperty.call(REGIOES, salvo.regiao)) padrao.regiao = salvo.regiao;
+      if (salvo && filtroDaRegiao(salvo.regiao)) padrao.regiao = salvo.regiao;
       if (salvo && salvo.dificil === true) padrao.dificil = true;
       if (salvo && salvo.modo === "sobrevivencia") padrao.modo = "sobrevivencia";
     } catch (e) { /* sem armazenamento, usa o padrão */ }
@@ -167,15 +233,36 @@
 
     // Países independentes entram primeiro no índice, para ganhar nomes repetidos.
     paises.sort(function (a, b) { return (b.independente ? 1 : 0) - (a.independente ? 1 : 0); });
+    guardarItens(paises);
+  }
+
+  // Clubes de futebol viram itens no mesmo formato dos países.
+  function prepararClubes(brutos) {
+    var clubes = brutos.map(function (c) {
+      return {
+        codigo: c.id,
+        nome: c.nome,
+        nomes: c.nomes || [c.nome],
+        regiao: c.liga,
+        latlng: c.latlng,
+        independente: true,
+        capitais: c.cidades || [],
+        populacao: 1000 - (c.fama || 999),
+        proporcao: c.proporcao,
+      };
+    });
+    guardarItens(clubes);
+  }
+
+  function guardarItens(itens) {
     var indice = new Map();
-    paises.forEach(function (p) {
+    itens.forEach(function (p) {
       p.nomes.forEach(function (n) {
         var chave = normalizar(n);
         if (chave && !indice.has(chave)) indice.set(chave, p);
       });
     });
-
-    estado.paises = paises;
+    estado.paises = itens;
     estado.indice = indice;
     montarPool();
   }
@@ -183,14 +270,44 @@
   // Quem pode ser sorteado: países independentes no modo normal; no difícil entram também
   // os territórios com bandeira própria. Depois filtra pela região escolhida.
   function montarPool() {
-    var regiao = REGIOES[estado.ajustes.regiao];
+    var regiao = (filtroDaRegiao(estado.ajustes.regiao) || {}).filtro;
     var dificil = estado.ajustes.dificil;
     estado.pool = estado.paises.filter(function (p) {
-      if (BANDEIRA_REPETIDA.indexOf(p.codigo) !== -1) return false;
+      if (TEMA === "bandeiras" && BANDEIRA_REPETIDA.indexOf(p.codigo) !== -1) return false;
       if (!p.independente && !dificil) return false;
       return regiao ? p.regiao === regiao : true;
     });
     estado.recentes = [];
+  }
+
+  // Textos, regiões e o ícone de troca de acordo com o tema (bandeiras ou futebol).
+  function aplicarTema() {
+    document.documentElement.setAttribute("data-tema", TEMA);
+    document.title = T.pagina;
+    $("titulo-mesa").textContent = T.titulo;
+    el.campo.placeholder = T.placeholder;
+    el.proxima.textContent = T.proxima;
+    $("dificil-explica").textContent = T.explicaDificil;
+    $("creditos").innerHTML = T.creditos;
+    var troca = $("troca-tema");
+    troca.href = T.trocaPara === "futebol" ? "./?tema=futebol" : "./";
+    troca.setAttribute("aria-label", T.trocaRotulo);
+    troca.title = T.trocaRotulo;
+
+    var grupo = $("seg-regiao");
+    var legenda = grupo.querySelector("legend");
+    grupo.replaceChildren(legenda);
+    T.regioes.forEach(function (r) {
+      var input = document.createElement("input");
+      input.type = "radio";
+      input.name = "regiao";
+      input.id = "r-" + r.valor;
+      input.value = r.valor;
+      var label = document.createElement("label");
+      label.htmlFor = input.id;
+      label.textContent = r.rotulo;
+      grupo.append(input, label);
+    });
   }
 
   function aplicarAjustes() {
@@ -213,7 +330,7 @@
     estado.pontos = 0;
     estado.sequencia = 0;
     estado.recorde = lerRecorde();
-    el.proxima.textContent = "Próxima bandeira";
+    el.proxima.textContent = T.proxima;
     atualizarPlacar();
   }
 
@@ -244,14 +361,14 @@
     var controle = "AbortController" in window ? new AbortController() : null;
     var tempo = setTimeout(function () { if (controle) controle.abort(); }, 12000);
 
-    fetch(API_PAISES, controle ? { signal: controle.signal } : undefined)
+    fetch(T.dados, controle ? { signal: controle.signal } : undefined)
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
       .then(function (dados) {
         clearTimeout(tempo);
-        prepararPaises(dados);
+        if (TEMA === "futebol") prepararClubes(dados); else prepararPaises(dados);
         if (!estado.pool.length) throw new Error("lista vazia");
         novaRodada();
       })
@@ -321,6 +438,7 @@
     function comecar() {
       if (!carregou || !esperou || estado.alvo !== alvo) return;
       var w = el.img.naturalWidth || 3, h = el.img.naturalHeight || 2;
+      if (alvo.proporcao) { w = alvo.proporcao[0]; h = alvo.proporcao[1]; }
       el.quadro.style.setProperty("--proporcao", w + " / " + h);
       el.img.hidden = false;
       setEstado("jogando");
@@ -339,8 +457,13 @@
       if (estado.alvo !== alvo) return;
       if (tentativa < 3) novaRodada(tentativa + 1); else mostrarFalha();
     };
-    el.img.srcset = CDN_BANDEIRAS + "w1280/" + alvo.codigo + ".png 2x";
-    el.img.src = CDN_BANDEIRAS + "w640/" + alvo.codigo + ".png";
+    if (TEMA === "futebol") {
+      el.img.removeAttribute("srcset");
+      el.img.src = "escudos/" + alvo.codigo + ".svg";
+    } else {
+      el.img.srcset = CDN_BANDEIRAS + "w1280/" + alvo.codigo + ".png 2x";
+      el.img.src = CDN_BANDEIRAS + "w640/" + alvo.codigo + ".png";
+    }
   }
 
   // Fecha os quadrados na hora, sem animação, para não deixar a bandeira aparecer.
@@ -489,7 +612,7 @@
       falar("nao_existe", { chute: el.campo.value.trim() }, "desdem");
       return;
     }
-    mostrarSugestoes(todos, chave ? "Países com esse nome" : "Todos os países");
+    mostrarSugestoes(todos, chave ? T.listaFiltrada : T.listaTodos);
     var primeiro = el.sugestoesLista.querySelector(".sugestao");
     if (primeiro) primeiro.focus();
   }
@@ -530,7 +653,7 @@
 
     var texto = el.campo.value.trim();
     if (!texto) {
-      el.aviso.textContent = "Digite o nome de um país.";
+      el.aviso.textContent = T.digiteNome;
       el.campo.setAttribute("aria-invalid", "true");
       el.campo.focus();
       return;
@@ -675,7 +798,7 @@
         estado.fimDeJogo = true;
         falar("fim_de_jogo", { pais: estado.alvo.nome, acertos: estado.sequencia, pontos: estado.pontos }, "zoando", categoria);
         encerrar("Fim de jogo. Era",
-          "Você acertou " + estado.sequencia + (estado.sequencia === 1 ? " bandeira" : " bandeiras") +
+          "Você acertou " + estado.sequencia + (estado.sequencia === 1 ? " " + T.item : " " + T.itens) +
           " e fez " + estado.pontos + " pontos.");
         el.proxima.textContent = "Jogar de novo";
         return;
@@ -695,7 +818,7 @@
     var capitais = estado.alvo.capitais || [];
     if (!capitais.length) return;
     estado.capitalRespondida = false;
-    el.capitalPergunta.textContent = "Vale 50% de bônus: qual é a capital?";
+    el.capitalPergunta.textContent = T.bonus;
     el.campoCapital.value = "";
     el.campoCapital.disabled = false;
     el.botaoCapital.disabled = false;
@@ -728,11 +851,11 @@
       dados.pontos = bonus;
       estado.pontos += bonus;
       atualizarPlacar();
-      el.capitalResultado.textContent = "Isso, " + capitais[0] + ". Mais " + bonus + " pontos de bônus.";
+      el.capitalResultado.textContent = T.bonusCerto.replace("{r}", capitais[0]).replace("{p}", bonus);
       el.capitalResultado.className = "capital__resultado is-certo";
       falar("capital_certa", dados, "chocado");
     } else {
-      el.capitalResultado.textContent = "Não. A capital é " + capitais[0] + ".";
+      el.capitalResultado.textContent = T.bonusErrado.replace("{r}", capitais[0]);
       el.capitalResultado.className = "capital__resultado is-errado";
       falar("capital_errada", dados, "zoando");
     }
@@ -745,7 +868,7 @@
     atualizarProgresso();
     atualizarPlacar();
     travarForm(true);
-    el.img.alt = "Bandeira de " + estado.alvo.nome;
+    el.img.alt = T.alt + estado.alvo.nome;
     el.form.hidden = true;
     el.fimRotulo.textContent = rotulo;
     el.fimPais.textContent = estado.alvo.nome;
@@ -778,6 +901,7 @@
 
   el.ajustes.addEventListener("change", mudarAjustes);
 
+  aplicarTema();
   aplicarAjustes();
   atualizarPlacar();
   carregarPaises();

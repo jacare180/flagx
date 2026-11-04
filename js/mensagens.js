@@ -160,3 +160,85 @@ window.FLAGX_MENSAGENS = {
     "A internet caiu ou as bandeiras fugiram. Nem eu trabalho assim.",
   ],
 };
+
+/*
+ * Falas do jacaré na página de futebol (?tema=futebol).
+ * Só precisa listar o que muda: o que não estiver aqui usa as falas de cima.
+ */
+window.FLAGX_MENSAGENS_FUTEBOL = {
+  carregando: [
+    "Carregando os escudos. Vai aquecendo enquanto isso.",
+  ],
+
+  inicio: [
+    "Um pedaço do escudo. Torcedor de verdade acerta agora.",
+    "Novo escudo. Se for do seu time e você errar, eu vou contar pra torcida.",
+    "Olha esse pedaço. Tem cara de clube grande ou de time da segunda divisão?",
+    "Valendo pontos. Ou valendo zoeira, depende de você.",
+  ],
+
+  inicio_dificil: [
+    "Sem cor e espelhado. Agora quero ver quem é torcedor de verdade.",
+    "Modo difícil. Nem o roupeiro do clube reconhece assim.",
+  ],
+
+  sobrevivencia_inicio: [
+    "Sobrevivência. Três vidas e começa pelos gigantes. Depois vem a segunda divisão.",
+    "Três vidas. Aposto que você cai antes da metade do campeonato.",
+  ],
+
+  nao_existe: [
+    "\"{chute}\" não é clube. Nem no seu time de várzea.",
+    "Nunca ouvi falar de \"{chute}\". E eu vejo todos os jogos.",
+    "Inventou um time agora? Escolhe um da lista, por favor.",
+  ],
+
+  sugestoes: [
+    "\"{chute}\"? Fala o nome direito, não é apelido de torcida. Algum desses?",
+    "Faltou letra aí. Clica no clube que você quis dizer.",
+  ],
+
+  erro_perto: [
+    "{chute}? Tá quente. O estádio certo fica {direcao}, a {distancia}.",
+    "Errou, mas é clássico regional. {distancia} {direcao}.",
+  ],
+
+  erro_longe: [
+    "{chute}? Errou de continente. O certo está a {distancia} daqui.",
+    "{distancia} de distância. Nem excursão de torcida organizada vai tão longe.",
+  ],
+
+  derrota: [
+    "Era {pais}. O escudo inteiro na sua frente e nada.",
+    "{pais}. Vou fingir que essa rodada não aconteceu.",
+  ],
+
+  desistiu: [
+    "Desistiu? Era {pais}. Abandonou o jogo antes do apito final.",
+    "Era {pais}. Pediu pra sair aos 30 do primeiro tempo.",
+  ],
+
+  perdeu_vida: [
+    "Era {pais}. Lá se vai uma vida. Sobraram {vidas}.",
+    "{pais}, campeão. Cartão vermelho para uma vida.",
+  ],
+
+  fim_de_jogo: [
+    "Era {pais}. Fim de jogo. {acertos} escudos, nada mal para quem chuta tanto.",
+    "Apito final. {acertos} acertos e {pontos} pontos. Rebaixado.",
+  ],
+
+  capital_certa: [
+    "{capital}, isso mesmo. Mais {pontos} pontos. Conhece até o endereço do estádio.",
+    "Acertou a cidade. Tá parecendo comentarista.",
+  ],
+
+  capital_errada: [
+    "{chute}? O clube é de {capital}. Anota aí.",
+    "Errou. É {capital}. Pelo menos o time você acertou.",
+  ],
+
+  falha: [
+    "Os escudos não carregaram. Jogo adiado por falta de luz no estádio.",
+  ],
+};

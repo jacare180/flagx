@@ -1,6 +1,6 @@
 /* Hallmark · shape: app screen · genre: playful · theme: Overprint (deal 1/3, seed jogo-adivinhar-bandeiras-mundo-995d·03a2151f·2026-11-04·r0)
  * nav: a top bar, the wordmark and the score · signature: the flag board, six numbered bills that lift one by one · states: loading, error, playing, round over · overprint: newsprint
- * user overrides: rounded grey pieces with a thick ink edge, the jacaré printed in moss (the user asked for both)
+ * user overrides: grey pieces in a 3px ink grid, no numbers, the jacaré printed in moss (the user asked for both)
  * axes: light/grotesk-heavy/cool · posture: full-palette · contrast: pass · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · weakest: P, a guessing board is familiar; the sarcastic jacaré carries the argument, so he speaks on every guess */
 /* Hallmark · waive 80 · one jacaré svg mascot beside the board, built from flat pass fills · the user asked for the jacaré as Flagx's protagonist, he reacts to every guess */
@@ -8,12 +8,11 @@
 @import url("./base.css");
 
 :root {
-  --peca-num: clamp(2.5rem, 6vw, 4.5rem);
   --text-marca: 1.728rem;
   --color-peca: oklch(74% 0.008 85);
   --color-musgo: var(--color-mix);
   --color-musgo-claro: oklch(52% 0.12 142);
-  --radius-peca: 18px;
+  --grade: 3px;
 }
 
 /* top bar */
@@ -38,11 +37,9 @@
 .quadro { position: relative; margin: 0; aspect-ratio: var(--proporcao, 3 / 2); max-height: 70svh; max-width: 100%; border-top: var(--rule-bar) solid var(--color-ink); background: var(--color-paper-2); }
 .quadro > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
 .jogo[data-modo-dificil="sim"] .quadro > img { filter: grayscale(1) contrast(1.2); transform: scaleX(-1); }
-.pecas { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-.peca { display: grid; padding: var(--space-3xs); background: var(--color-ink); transition: opacity var(--dur-long) var(--ease-out), transform var(--dur-long) var(--ease-out); }
-.peca > span { display: grid; place-items: center; border: var(--rule-bar) solid var(--color-ink); border-radius: var(--radius-peca); background: var(--color-peca); color: var(--color-ink); font: var(--display-weight) var(--peca-num)/1 var(--font-display); font-stretch: 150%; font-variant-numeric: tabular-nums; }
+.pecas { position: absolute; inset: 0; border: calc(var(--grade) / 2) solid var(--color-ink); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.peca { border: calc(var(--grade) / 2) solid var(--color-ink); background: var(--color-peca); transition: opacity var(--dur-long) var(--ease-out), transform var(--dur-long) var(--ease-out); }
 .peca.is-aberta { opacity: 0; transform: translateY(-8px); }
-.jogo[data-estado="carregando"] .peca > span { color: var(--color-ink-2); }
 .progresso { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs) var(--space-lg); margin-top: var(--space-sm); font: 600 var(--text-sm)/1.3 var(--font-outlier); color: var(--color-ink-2); }
 .progresso strong { font-family: var(--font-display); font-stretch: 150%; color: var(--color-ink); }
 
@@ -70,7 +67,7 @@
 /* the guess form */
 .chute { display: grid; gap: var(--space-xs); }
 .chute label { font: 600 var(--text-sm)/1.2 var(--font-outlier); }
-.chute__linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-xs); }
+.chute__linha { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-xs); }
 .chute input { min-height: 48px; padding: 0 var(--space-md); border: 0; border-radius: 0; box-shadow: inset 0 0 0 2px var(--color-ink); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-md); }
 .chute input::placeholder { color: var(--color-muted); }
 .chute input:hover { background: var(--color-paper-2); }
@@ -83,7 +80,7 @@
 .sugestoes { display: grid; gap: var(--space-xs); }
 .sugestoes[hidden] { display: none; }
 .sugestoes__titulo { font: 600 var(--text-sm)/1.2 var(--font-outlier); color: var(--color-muted); }
-.sugestoes__lista { margin: 0; padding: 0; list-style: none; border-top: var(--rule-bar) solid var(--color-ink); }
+.sugestoes__lista { margin: 0; padding: 0; list-style: none; max-height: 22rem; overflow-y: auto; overscroll-behavior: contain; border-top: var(--rule-bar) solid var(--color-ink); }
 .sugestoes__lista li { border-bottom: var(--rule-hair) solid var(--color-rule); }
 .sugestao { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 var(--space-sm); border: 0; border-radius: 0; background: transparent; color: var(--color-ink); font-size: var(--text-md); text-align: left; cursor: pointer; }
 .sugestao:hover { background: var(--color-paper-2); }
@@ -100,6 +97,9 @@
 .btn--primario:hover:not(:disabled) { background: var(--color-accent-2); color: var(--color-accent-2-ink); }
 .btn--secundario { background: transparent; color: var(--color-ink); box-shadow: inset 0 0 0 2px var(--color-ink); }
 .btn--secundario:hover:not(:disabled) { background: var(--color-paper-2); }
+.btn--seta { width: 48px; padding: 0; }
+.btn--seta svg { transition: transform var(--dur-short) var(--ease-out); }
+.btn--seta[aria-expanded="true"] svg { transform: rotate(180deg); }
 
 .link { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--color-ink); font-size: var(--text-sm); white-space: nowrap; text-decoration: underline 2px var(--color-accent); text-underline-offset: 0.25em; cursor: pointer; }
 .link:hover:not(:disabled) { text-decoration-color: var(--color-ink); }
@@ -143,6 +143,6 @@
   .mesa__cabeca { margin-bottom: var(--space-md); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .peca, .croc__mandibula, .croc__pupila, .croc__palpebra { transition: opacity var(--dur-micro) linear; }
+  .peca, .btn--seta svg, .croc__mandibula, .croc__pupila, .croc__palpebra { transition: opacity var(--dur-micro) linear; }
   .peca.is-aberta { transform: none; }
 }

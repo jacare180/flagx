@@ -32,12 +32,12 @@
       <figure class="quadro" id="quadro" aria-describedby="progresso">
         <img id="bandeira" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" width="640" height="427" hidden>
         <div class="pecas" id="pecas" aria-hidden="true">
-          <span class="peca" data-peca="1"><span>1</span></span>
-          <span class="peca" data-peca="2"><span>2</span></span>
-          <span class="peca" data-peca="3"><span>3</span></span>
-          <span class="peca" data-peca="4"><span>4</span></span>
-          <span class="peca" data-peca="5"><span>5</span></span>
-          <span class="peca" data-peca="6"><span>6</span></span>
+          <span class="peca" data-peca="1"></span>
+          <span class="peca" data-peca="2"></span>
+          <span class="peca" data-peca="3"></span>
+          <span class="peca" data-peca="4"></span>
+          <span class="peca" data-peca="5"></span>
+          <span class="peca" data-peca="6"></span>
         </div>
       </figure>
 
@@ -80,7 +80,10 @@
       <form class="chute" id="form-chute" autocomplete="off" novalidate>
         <label for="campo-chute">Seu chute</label>
         <div class="chute__linha">
-          <input id="campo-chute" name="chute" type="text" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Digite um país e aperte Enter" aria-describedby="aviso-chute" disabled>
+          <input id="campo-chute" name="flagx-chute" type="text" autocomplete="off" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Digite um país e aperte Enter" aria-describedby="aviso-chute" disabled>
+          <button class="btn btn--secundario btn--seta" id="botao-lista" type="button" aria-expanded="false" aria-controls="sugestoes" aria-label="Ver a lista de países" disabled>
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 5l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>
+          </button>
           <button class="btn btn--primario" id="botao-chute" type="submit" disabled>Chutar</button>
         </div>
         <p class="aviso" id="aviso-chute"></p>

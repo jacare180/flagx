@@ -30,7 +30,7 @@
     jogo: $("jogo"), img: $("bandeira"), quadro: $("quadro"), pecas: $("pecas"),
     reveladas: $("reveladas"), valor: $("valor"), croc: $("croc"), fala: $("fala"),
     form: $("form-chute"), campo: $("campo-chute"), botao: $("botao-chute"), aviso: $("aviso-chute"),
-    sugestoes: $("sugestoes"), sugestoesLista: $("sugestoes-lista"), desisto: $("botao-desisto"),
+    sugestoes: $("sugestoes"), sugestoesLista: $("sugestoes-lista"), sugestoesTitulo: $("sugestoes-titulo"), botaoLista: $("botao-lista"), desisto: $("botao-desisto"),
     fim: $("fim"), fimRotulo: $("fim-rotulo"), fimPais: $("fim-pais"), fimPlacar: $("fim-placar"), proxima: $("botao-proxima"),
     falha: $("falha"), tentar: $("botao-tentar"),
     chutes: $("lista-chutes"), chutesVazio: $("chutes-vazio"),
@@ -257,6 +257,7 @@
     el.campo.disabled = travar;
     el.botao.disabled = travar;
     el.desisto.disabled = travar;
+    el.botaoLista.disabled = travar;
   }
 
   function limparAviso() {
@@ -281,7 +282,7 @@
 
   var MAX_SUGESTOES = 6;
 
-  function buscarSugestoes(chave) {
+  function buscarSugestoes(chave, limite) {
     var achados = [];
     estado.paises.forEach(function (p) {
       var melhor = -1;
@@ -298,10 +299,11 @@
     achados.sort(function (a, b) {
       return b.nota - a.nota || a.pais.nome.localeCompare(b.pais.nome, "pt");
     });
-    return achados.slice(0, MAX_SUGESTOES).map(function (a) { return a.pais; });
+    return achados.slice(0, limite || MAX_SUGESTOES).map(function (a) { return a.pais; });
   }
 
-  function mostrarSugestoes(paises) {
+  function mostrarSugestoes(paises, titulo) {
+    el.sugestoesTitulo.textContent = titulo || "Você quis dizer";
     var frag = document.createDocumentFragment();
     paises.forEach(function (p) {
       var li = document.createElement("li");
@@ -318,17 +320,47 @@
       frag.appendChild(li);
     });
     el.sugestoesLista.replaceChildren(frag);
+    el.sugestoesLista.scrollTop = 0;
     el.sugestoes.hidden = false;
+    el.botaoLista.setAttribute("aria-expanded", "true");
+  }
+
+  // A seta abre a lista de todos os países (filtrada pelo que já foi digitado).
+  function alternarLista() {
+    if (!el.sugestoes.hidden && el.botaoLista.getAttribute("aria-expanded") === "true") {
+      esconderSugestoes();
+      el.campo.focus();
+      return;
+    }
+    var chave = normalizar(el.campo.value);
+    var todos = chave ? buscarSugestoes(chave, Infinity) : estado.paises.slice()
+      .sort(function (a, b) { return a.nome.localeCompare(b.nome, "pt"); });
+    if (!todos.length) {
+      falar("nao_existe", { chute: el.campo.value.trim() }, "desdem");
+      return;
+    }
+    mostrarSugestoes(todos, chave ? "Países com esse nome" : "Todos os países");
+    var primeiro = el.sugestoesLista.querySelector(".sugestao");
+    if (primeiro) primeiro.focus();
   }
 
   function esconderSugestoes() {
     el.sugestoes.hidden = true;
     el.sugestoesLista.replaceChildren();
+    el.botaoLista.setAttribute("aria-expanded", "false");
   }
 
   function moverNasSugestoes(evento) {
+    if (el.sugestoes.hidden) {
+      // Seta para baixo no campo também abre a lista de países.
+      if (evento.key === "ArrowDown" && evento.target === el.campo && !el.botaoLista.disabled) {
+        evento.preventDefault();
+        alternarLista();
+      }
+      return;
+    }
     var botoes = Array.prototype.slice.call(el.sugestoesLista.querySelectorAll(".sugestao"));
-    if (!botoes.length || el.sugestoes.hidden) return;
+    if (!botoes.length) return;
     var atual = botoes.indexOf(document.activeElement);
     if (evento.key === "ArrowDown") {
       evento.preventDefault();
@@ -444,6 +476,7 @@
   el.form.addEventListener("submit", chutar);
   el.campo.addEventListener("input", function () { limparAviso(); esconderSugestoes(); });
   el.form.addEventListener("keydown", moverNasSugestoes);
+  el.botaoLista.addEventListener("click", alternarLista);
   el.desisto.addEventListener("click", function () {
     if (!estado.encerrada) perder("desistiu", "desdem");
   });

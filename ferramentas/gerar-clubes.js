@@ -4,6 +4,7 @@
  * Uso (na pasta do projeto):
  *   git clone --depth 1 https://github.com/FCLOGO/fclogo.top <pasta>
  *   node ferramentas/gerar-clubes.js <pasta>/src/data/logos
+ *   (depois rode ferramentas/gerar-clubes-brasil.js para os clubes do Brasil)
  *
  * Fonte: FCLOGO (https://github.com/FCLOGO/fclogo.top), licença MIT.
  * Os escudos são marcas dos clubes; o jogo é um projeto de fã, sem fins comerciais.
@@ -23,9 +24,6 @@ const LIGAS = {
   RFEF: { liga: "espanha", pais: "Espanha" },
   FIGC: { liga: "italia", pais: "Itália" },
   DFB: { liga: "alemanha", pais: "Alemanha" },
-  FFF: { liga: "franca", pais: "França" },
-  AFA: { liga: "argentina", pais: "Argentina" },
-  CBF: { liga: "brasil", pais: "Brasil" },
   FPF: { liga: "portugal", pais: "Portugal" },
 };
 

@@ -56,10 +56,9 @@
         { valor: "espanha", rotulo: "Espanha", filtro: "espanha" },
         { valor: "italia", rotulo: "Itália", filtro: "italia" },
         { valor: "alemanha", rotulo: "Alemanha", filtro: "alemanha" },
-        { valor: "franca", rotulo: "França", filtro: "franca" },
-        { valor: "argentina", rotulo: "Argentina", filtro: "argentina" },
+        { valor: "brasil", rotulo: "Brasil", filtro: "brasil" },
       ],
-      creditos: 'Escudos da coleção <a href="https://github.com/FCLOGO/fclogo.top">FCLOGO</a>, para uso pessoal. Os escudos são marcas dos clubes.',
+      creditos: 'Escudos das coleções <a href="https://github.com/FCLOGO/fclogo.top">FCLOGO</a> (uso pessoal) e <a href="https://github.com/washingtonos/escudos-futebol-api">escudos-futebol-api</a>. Os escudos são marcas dos clubes.',
       trocaPara: "bandeiras", trocaRotulo: "Trocar para bandeiras",
     },
   };
@@ -705,6 +704,8 @@
 
     var chave = normalizar(texto);
     var pais = estado.indice.get(chave);
+    // Apelido de mais de um clube (como "Inter"): vale para o que está na tela.
+    if (pais && estado.alvo && pais !== estado.alvo && estado.alvo.nomes.some(function (n) { return normalizar(n) === chave; })) pais = estado.alvo;
     if (!pais) {
       var parecidos = chave ? buscarSugestoes(chave) : [];
       if (parecidos.length) {

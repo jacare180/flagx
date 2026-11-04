@@ -1,4 +1,4 @@
-/* Flagx: modo clássico, com filtro de região e modo difícil. */
+/* Flagx: modos clássico e sobrevivência, filtro de região, modo difícil e bônus da capital. */
 (function () {
   "use strict";
 
@@ -12,6 +12,13 @@
   var CHAVE_RECORDE = "flagx.recorde";
   var CHAVE_AJUSTES = "flagx.ajustes";
   var MULTIPLICADOR_DIFICIL = 2;
+  var BONUS_CAPITAL = 0.5;          // a capital certa vale mais 50% dos pontos da rodada
+  var VIDAS_SOBREVIVENCIA = 3;
+  // Sobrevivência: começa só com os países mais populosos (os mais conhecidos)
+  // e a cada acerto abre mais uma fatia da lista.
+  var FAMA_INICIAL = 0.25;          // 25% mais populosos no começo
+  var FAMA_POR_ACERTO = 0.05;       // mais 5% da lista a cada acerto
+  var FAMA_MINIMO = 8;              // nunca menos que 8 opções
 
   // Territórios que usam a bandeira de outro país (impossíveis de acertar). Ficam fora do sorteio.
   var BANDEIRA_REPETIDA = ["hm", "bl", "gp", "gf", "mf", "yt", "re", "pm", "wf", "sh", "um", "bv", "sj", "mq", "nc"];
@@ -48,14 +55,20 @@
     chutes: $("lista-chutes"), chutesVazio: $("chutes-vazio"),
     pontos: $("pontos"), sequencia: $("sequencia"), recorde: $("recorde"),
     ajustes: $("ajustes"), dificil: $("ajuste-dificil"),
+    placarVidas: $("placar-vidas"), vidas: $("vidas"), rotuloSequencia: $("rotulo-sequencia"),
+    formCapital: $("form-capital"), capitalPergunta: $("capital-pergunta"), campoCapital: $("campo-capital"),
+    botaoCapital: $("botao-capital"), capitalResultado: $("capital-resultado"),
   };
 
   var estado = {
     paises: [], pool: [], indice: new Map(), recentes: [],
     alvo: null, ordem: [], abertas: 0, chutes: [], encerrada: true,
-    pontos: 0, sequencia: 0, recorde: lerRecorde(), ultimaFala: {},
+    pontos: 0, sequencia: 0, recorde: 0, ultimaFala: {},
     ajustes: lerAjustes(),
+    vidas: VIDAS_SOBREVIVENCIA, fimDeJogo: false, primeiraDaCorrida: true,
+    ganhoRodada: 0, capitalRespondida: true,
   };
+  estado.recorde = lerRecorde();
 
   /* ---------- utilidades ---------- */
 
@@ -82,7 +95,8 @@
     });
   }
 
-  function falar(categoria, dados, humor) {
+  function falar(categoria, dados, humor, reserva) {
+    if ((!M[categoria] || !M[categoria].length) && reserva) categoria = reserva;
     var lista = M[categoria] && M[categoria].length ? M[categoria] : [""];
     var frase = sortear(lista);
     if (lista.length > 1) {
@@ -93,20 +107,27 @@
     el.croc.setAttribute("data-humor", humor || "neutro");
   }
 
+  function emSobrevivencia() { return estado.ajustes.modo === "sobrevivencia"; }
+
+  // Cada modo tem o seu recorde: no clássico é a maior sequência, na sobrevivência
+  // é o maior número de acertos numa corrida.
+  function chaveRecorde() { return emSobrevivencia() ? CHAVE_RECORDE + ".sobrevivencia" : CHAVE_RECORDE; }
+
   function lerRecorde() {
-    try { return parseInt(localStorage.getItem(CHAVE_RECORDE), 10) || 0; } catch (e) { return 0; }
+    try { return parseInt(localStorage.getItem(chaveRecorde()), 10) || 0; } catch (e) { return 0; }
   }
 
   function salvarRecorde(valor) {
-    try { localStorage.setItem(CHAVE_RECORDE, String(valor)); } catch (e) { /* sem armazenamento, segue o jogo */ }
+    try { localStorage.setItem(chaveRecorde(), String(valor)); } catch (e) { /* sem armazenamento, segue o jogo */ }
   }
 
   function lerAjustes() {
-    var padrao = { regiao: "mundo", dificil: false };
+    var padrao = { modo: "classico", regiao: "mundo", dificil: false };
     try {
       var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "{}");
       if (salvo && Object.prototype.hasOwnProperty.call(REGIOES, salvo.regiao)) padrao.regiao = salvo.regiao;
       if (salvo && salvo.dificil === true) padrao.dificil = true;
+      if (salvo && salvo.modo === "sobrevivencia") padrao.modo = "sobrevivencia";
     } catch (e) { /* sem armazenamento, usa o padrão */ }
     return padrao;
   }
@@ -139,6 +160,8 @@
           regiao: p.region,
           latlng: p.latlng,
           independente: p.independent === true,
+          capitais: p.capital || [],
+          populacao: p.population || 0,
         };
       });
 
@@ -175,14 +198,36 @@
     el.dificil.checked = estado.ajustes.dificil;
     var marcado = el.ajustes.querySelector('input[name="regiao"][value="' + estado.ajustes.regiao + '"]');
     if (marcado) marcado.checked = true;
+    var modo = el.ajustes.querySelector('input[name="modo"][value="' + estado.ajustes.modo + '"]');
+    if (modo) modo.checked = true;
+    el.jogo.setAttribute("data-modo", estado.ajustes.modo);
+    el.placarVidas.hidden = !emSobrevivencia();
+    el.rotuloSequencia.textContent = emSobrevivencia() ? "Acertos" : "Sequência";
+  }
+
+  // Começa uma corrida nova da sobrevivência (ou zera o placar ao trocar de modo).
+  function iniciarCorrida() {
+    estado.vidas = VIDAS_SOBREVIVENCIA;
+    estado.fimDeJogo = false;
+    estado.primeiraDaCorrida = true;
+    estado.pontos = 0;
+    estado.sequencia = 0;
+    estado.recorde = lerRecorde();
+    el.proxima.textContent = "Próxima bandeira";
+    atualizarPlacar();
   }
 
   function mudarAjustes() {
     var regiao = el.ajustes.querySelector('input[name="regiao"]:checked');
+    var modo = el.ajustes.querySelector('input[name="modo"]:checked');
+    var modoAntes = estado.ajustes.modo;
     estado.ajustes.regiao = regiao ? regiao.value : "mundo";
     estado.ajustes.dificil = el.dificil.checked;
+    estado.ajustes.modo = modo ? modo.value : "classico";
     salvarAjustes();
     aplicarAjustes();
+    // Na sobrevivência qualquer mudança começa uma corrida nova; trocar de modo também zera o placar.
+    if (emSobrevivencia() || modoAntes !== estado.ajustes.modo) iniciarCorrida();
     if (!estado.paises.length) return;
     montarPool();
     novaRodada();
@@ -226,9 +271,19 @@
 
   /* ---------- rodada ---------- */
 
+  // Na sobrevivência, só os países mais populosos no começo; a lista cresce a cada acerto.
+  function poolDaVez() {
+    if (!emSobrevivencia()) return estado.pool;
+    var ordenados = estado.pool.slice().sort(function (a, b) { return b.populacao - a.populacao; });
+    var fatia = Math.min(1, FAMA_INICIAL + FAMA_POR_ACERTO * estado.sequencia);
+    var quantos = Math.max(FAMA_MINIMO, Math.ceil(ordenados.length * fatia));
+    return ordenados.slice(0, quantos);
+  }
+
   function escolherAlvo() {
-    var candidatos = estado.pool.filter(function (p) { return estado.recentes.indexOf(p.codigo) === -1; });
-    if (!candidatos.length) candidatos = estado.pool;
+    var pool = poolDaVez();
+    var candidatos = pool.filter(function (p) { return estado.recentes.indexOf(p.codigo) === -1; });
+    if (!candidatos.length) candidatos = pool;
     var alvo = sortear(candidatos);
     estado.recentes.push(alvo.codigo);
     if (estado.recentes.length > Math.min(30, Math.floor(estado.pool.length / 2))) estado.recentes.shift();
@@ -271,7 +326,11 @@
       setEstado("jogando");
       abrirProxima();
       travarForm(false);
-      falar(estado.ajustes.dificil && M.inicio_dificil && M.inicio_dificil.length ? "inicio_dificil" : "inicio", { pais: alvo.nome }, "neutro");
+      var abertura = "inicio";
+      if (emSobrevivencia() && estado.primeiraDaCorrida) abertura = "sobrevivencia_inicio";
+      else if (estado.ajustes.dificil) abertura = "inicio_dificil";
+      estado.primeiraDaCorrida = false;
+      falar(abertura, { pais: alvo.nome, vidas: estado.vidas }, "neutro", "inicio");
       el.campo.focus({ preventScroll: true });
     }
     setTimeout(function () { esperou = true; comecar(); }, ESPERA_BANDEIRA);
@@ -320,6 +379,7 @@
     el.pontos.textContent = estado.pontos;
     el.sequencia.textContent = estado.sequencia;
     el.recorde.textContent = estado.recorde;
+    el.vidas.textContent = estado.vidas;
   }
 
   function travarForm(travar) {
@@ -600,16 +660,83 @@
     }
     var categoria = pedacos === 1 ? "acerto_genio" : pedacos <= 3 ? "acerto_bom" : "acerto_sofrido";
     falar(categoria, { pais: estado.alvo.nome, pedacos: pedacos, pontos: ganho }, "chocado");
+    estado.ganhoRodada = ganho;
     encerrar(
       "Acertou, é",
       "Com " + pedacos + (pedacos === 1 ? " pedaço" : " pedaços") + " à mostra. Mais " + ganho + " pontos."
     );
+    perguntarCapital();
   }
 
   function perder(categoria, humor) {
+    if (emSobrevivencia()) {
+      estado.vidas--;
+      if (estado.vidas <= 0) {
+        estado.fimDeJogo = true;
+        falar("fim_de_jogo", { pais: estado.alvo.nome, acertos: estado.sequencia, pontos: estado.pontos }, "zoando", categoria);
+        encerrar("Fim de jogo. Era",
+          "Você acertou " + estado.sequencia + (estado.sequencia === 1 ? " bandeira" : " bandeiras") +
+          " e fez " + estado.pontos + " pontos.");
+        el.proxima.textContent = "Jogar de novo";
+        return;
+      }
+      falar("perdeu_vida", { pais: estado.alvo.nome, vidas: estado.vidas }, humor, categoria);
+      encerrar("Era", "Você perdeu uma vida. " + (estado.vidas === 1 ? "Resta 1." : "Restam " + estado.vidas + "."));
+      return;
+    }
     estado.sequencia = 0;
     falar(categoria, { pais: estado.alvo.nome }, humor);
     encerrar("Era", "Sem pontos nesta rodada. A sequência voltou para zero.");
+  }
+
+  /* ---------- bônus da capital ---------- */
+
+  function perguntarCapital() {
+    var capitais = estado.alvo.capitais || [];
+    if (!capitais.length) return;
+    estado.capitalRespondida = false;
+    el.capitalPergunta.textContent = "Vale 50% de bônus: qual é a capital?";
+    el.campoCapital.value = "";
+    el.campoCapital.disabled = false;
+    el.botaoCapital.disabled = false;
+    el.campoCapital.removeAttribute("aria-invalid");
+    el.capitalResultado.textContent = "";
+    el.capitalResultado.className = "capital__resultado";
+    el.formCapital.hidden = false;
+    el.campoCapital.focus({ preventScroll: true });
+  }
+
+  function responderCapital(evento) {
+    evento.preventDefault();
+    if (estado.capitalRespondida) return;
+    var texto = el.campoCapital.value.trim();
+    if (!texto) {
+      el.capitalResultado.textContent = "Digite o nome de uma cidade, ou siga para a próxima.";
+      el.campoCapital.setAttribute("aria-invalid", "true");
+      el.campoCapital.focus();
+      return;
+    }
+    var capitais = estado.alvo.capitais;
+    var certa = capitais.some(function (c) { return normalizar(c) === normalizar(texto); });
+    estado.capitalRespondida = true;
+    el.campoCapital.disabled = true;
+    el.botaoCapital.disabled = true;
+    el.campoCapital.removeAttribute("aria-invalid");
+    var dados = { pais: estado.alvo.nome, capital: capitais[0], chute: texto };
+    if (certa) {
+      var bonus = Math.round(estado.ganhoRodada * BONUS_CAPITAL);
+      dados.pontos = bonus;
+      estado.pontos += bonus;
+      atualizarPlacar();
+      el.capitalResultado.textContent = "Isso, " + capitais[0] + ". Mais " + bonus + " pontos de bônus.";
+      el.capitalResultado.className = "capital__resultado is-certo";
+      falar("capital_certa", dados, "chocado");
+    } else {
+      el.capitalResultado.textContent = "Não. A capital é " + capitais[0] + ".";
+      el.capitalResultado.className = "capital__resultado is-errado";
+      falar("capital_errada", dados, "zoando");
+    }
+    el.proxima.focus();
   }
 
   function encerrar(rotulo, placar) {
@@ -623,6 +750,7 @@
     el.fimRotulo.textContent = rotulo;
     el.fimPais.textContent = estado.alvo.nome;
     el.fimPlacar.textContent = placar;
+    el.formCapital.hidden = true;
     el.fim.hidden = false;
     setEstado("fim");
     el.fimPais.focus({ preventScroll: true });
@@ -637,7 +765,15 @@
   el.desisto.addEventListener("click", function () {
     if (!estado.encerrada) perder("desistiu", "desdem");
   });
-  el.proxima.addEventListener("click", function () { novaRodada(); });
+  el.proxima.addEventListener("click", function () {
+    if (estado.fimDeJogo) iniciarCorrida();
+    novaRodada();
+  });
+  el.formCapital.addEventListener("submit", responderCapital);
+  el.campoCapital.addEventListener("input", function () {
+    el.campoCapital.removeAttribute("aria-invalid");
+    if (!estado.capitalRespondida) el.capitalResultado.textContent = "";
+  });
   el.tentar.addEventListener("click", carregarPaises);
 
   el.ajustes.addEventListener("change", mudarAjustes);

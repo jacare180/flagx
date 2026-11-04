@@ -129,6 +129,21 @@
 .fim__pais:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
 .fim__placar { margin-bottom: var(--space-sm); }
 
+/* capital bonus, after a right guess */
+.capital { display: grid; gap: var(--space-xs); width: 100%; margin-bottom: var(--space-sm); }
+.capital[hidden] { display: none; }
+.capital label { font: 600 var(--text-sm)/1.2 var(--font-outlier); }
+.capital__linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-xs); }
+.capital input { min-height: 48px; padding: 0 var(--space-md); border: 0; border-radius: 0; box-shadow: inset 0 0 0 2px var(--color-ink); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-md); }
+.capital input::placeholder { color: var(--color-muted); }
+.capital input:hover:not(:disabled) { background: var(--color-paper-2); }
+.capital input:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -5px; }
+.capital input:disabled { opacity: 0.55; cursor: not-allowed; }
+.capital input[aria-invalid="true"] { box-shadow: inset 0 0 0 2px var(--color-error); }
+.capital__resultado { min-height: 1lh; font-size: var(--text-sm); color: var(--color-ink-2); }
+.capital__resultado.is-certo { color: var(--color-success); }
+.capital__resultado.is-errado { color: var(--color-error); }
+
 .falha { display: grid; gap: var(--space-md); justify-items: start; padding: var(--space-lg); background: var(--color-paper-2); }
 
 /* this round's guesses */
@@ -158,6 +173,7 @@
   .jacare { grid-template-columns: 6rem minmax(0, 1fr); }
 }
 @media (max-width: 40rem) {
+  .topbar__inner { flex-wrap: wrap; padding-block: var(--space-sm); }
   .placar dd { font-size: var(--text-lg); }
   .wordmark { font-size: var(--text-xl); }
   .mesa h1 { font-size: var(--text-xl); }

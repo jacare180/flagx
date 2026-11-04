@@ -14,6 +14,11 @@
  *   {distancia}    distância do chute até o país certo, por exemplo "2.400 km"
  *   {direcao}      para que lado fica o país certo, já com "ao" ou "a", por exemplo "a nordeste" ou "ao sul"
  *   {proximidade}  o quanto o chute chegou perto, por exemplo "87%"
+ *
+ * Outros marcadores:
+ *   {capital}  a capital do país (falas da capital)
+ *   {vidas}    vidas que sobraram (sobrevivência)
+ *   {acertos}  bandeiras acertadas na corrida (fim de jogo da sobrevivência)
  */
 window.FLAGX_MENSAGENS = {
   carregando: [
@@ -34,6 +39,39 @@ window.FLAGX_MENSAGENS = {
     "Modo difícil. Sem cor e de trás pra frente. Boa sorte, vai precisar.",
     "Preto, branco e espelhada. Quero ver agora, sabichão.",
     "Pontos em dobro, vergonha em dobro também.",
+  ],
+
+  // Primeira rodada de uma corrida no modo Sobrevivência.
+  sobrevivencia_inicio: [
+    "Sobrevivência. Três vidas, nenhuma piedade. Começa pelas fáceis, depois eu fico malvado.",
+    "Três vidas. Aposto que você não passa de dez bandeiras.",
+  ],
+
+  // Sobrevivência: perdeu uma vida, mas ainda tem outras.
+  perdeu_vida: [
+    "Era {pais}. Lá se vai uma vida. Sobraram {vidas}.",
+    "{pais}, campeão. Menos uma vida. Eu tô contando.",
+    "Era {pais}. Ainda tem {vidas} vida(s), mas no seu ritmo não dura muito.",
+  ],
+
+  // Sobrevivência: acabaram as vidas.
+  fim_de_jogo: [
+    "Era {pais}. Fim de jogo. {acertos} bandeiras, nada mal para quem chuta tanto.",
+    "Acabou. {acertos} acertos e {pontos} pontos. O jacaré já viu piores. Poucos, mas viu.",
+    "Era {pais}. Game over. Vai estudar e volta mais tarde.",
+  ],
+
+  // Acertou a capital (bônus de 50%).
+  capital_certa: [
+    "{capital}, isso mesmo. Mais {pontos} pontos. Tá se achando, né?",
+    "Acertou a capital. Agora sim eu fiquei com inveja.",
+  ],
+
+  // Errou a capital.
+  capital_errada: [
+    "{chute}? A capital é {capital}. Anota aí.",
+    "Errou. É {capital}. Faltou a aula de geografia, né?",
+    "Não é {chute}, é {capital}. Pelo menos o país você acertou.",
   ],
 
   // Chute errado e PERTO do país certo (menos de 1.500 km).

@@ -139,7 +139,6 @@
 .fim__pais:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 4px; }
 .fim__placar { margin-bottom: var(--space-sm); }
 .compartilhar__aviso { min-height: 1lh; font-size: var(--text-sm); color: var(--color-ink-2); white-space: pre-line; }
-.seg:disabled { opacity: 0.55; }
 
 /* capital bonus, after a right guess */
 .capital { display: grid; gap: var(--space-xs); width: 100%; margin-bottom: var(--space-sm); }

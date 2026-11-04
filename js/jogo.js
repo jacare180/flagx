@@ -20,7 +20,7 @@
       digiteNome: "Digite o nome de um país.",
       listaTodos: "Todos os países", listaFiltrada: "Países com esse nome",
       alt: "Bandeira de ",
-      bonus: "Vale 50% de bônus: qual é a capital?",
+      bonus: "Vale 50% de bônus: qual é a capital?", placeholderBonus: "Digite a capital",
       bonusCerto: "Isso, {r}. Mais {p} pontos de bônus.", bonusErrado: "Não. A capital é {r}.",
       explicaDificil: "Sem cor, espelhada, com territórios. Pontos em dobro.",
       regiaoPadrao: "mundo",
@@ -37,6 +37,7 @@
     },
     futebol: {
       dados: "dados/clubes.json",
+      dadosExtra: "dados/retro.json", // escudos antigos, só aparecem na liga "Retrô"
       prefixo: "flagx.futebol",
       titulo: "Que escudo é esse?",
       pagina: "Flagx Futebol: adivinhe o escudo em seis pedaços",
@@ -46,7 +47,7 @@
       digiteNome: "Digite o nome de um clube.",
       listaTodos: "Todos os clubes", listaFiltrada: "Clubes com esse nome",
       alt: "Escudo do ",
-      bonus: "Vale 50% de bônus: de que cidade é o clube?",
+      bonus: "Vale 50% de bônus: de que cidade é o clube?", placeholderBonus: "Digite a cidade",
       bonusCerto: "Isso, {r}. Mais {p} pontos de bônus.", bonusErrado: "Não. O clube é de {r}.",
       explicaDificil: "Sem cor e espelhado. Pontos em dobro.",
       regiaoPadrao: "todos",
@@ -57,8 +58,9 @@
         { valor: "italia", rotulo: "Itália", filtro: "italia" },
         { valor: "alemanha", rotulo: "Alemanha", filtro: "alemanha" },
         { valor: "brasil", rotulo: "Brasil", filtro: "brasil" },
+        { valor: "retro", rotulo: "Retrô", filtro: "retro" },
       ],
-      creditos: 'Escudos das coleções <a href="https://github.com/FCLOGO/fclogo.top">FCLOGO</a> (uso pessoal) e <a href="https://github.com/washingtonos/escudos-futebol-api">escudos-futebol-api</a>. Os escudos são marcas dos clubes.',
+      creditos: 'Escudos das coleções <a href="https://github.com/FCLOGO/fclogo.top">FCLOGO</a> (uso pessoal) e <a href="https://github.com/washingtonos/escudos-futebol-api">escudos-futebol-api</a>. Escudos antigos da <a href="https://escudoteca.com/">Escudoteca</a>, usados com autorização. Todos os escudos são propriedade de seus respectivos clubes e federações.',
       trocaPara: "bandeiras", trocaRotulo: "Trocar para bandeiras",
     },
   };
@@ -265,6 +267,9 @@
         capitais: c.cidades || [],
         populacao: 1000 - (c.fama || 999),
         proporcao: c.proporcao,
+        arquivo: c.arquivo || c.id + ".svg",
+        versao: c.versao || null,
+        soNaRegiao: c.liga === "retro", // os antigos não entram no "Todos" nem no Diário
       };
     });
     guardarItens(clubes);
@@ -291,6 +296,7 @@
     estado.pool = estado.paises.filter(function (p) {
       if (TEMA === "bandeiras" && BANDEIRA_REPETIDA.indexOf(p.codigo) !== -1) return false;
       if (!p.independente && !dificil) return false;
+      if (p.soNaRegiao && regiao !== p.regiao) return false;
       return regiao ? p.regiao === regiao : true;
     });
     estado.recentes = [];
@@ -302,6 +308,7 @@
     document.title = T.pagina;
     $("titulo-mesa").textContent = T.titulo;
     el.campo.placeholder = T.placeholder;
+    el.campoCapital.placeholder = T.placeholderBonus;
     el.proxima.textContent = T.proxima;
     $("dificil-explica").textContent = T.explicaDificil;
     $("creditos").innerHTML = T.creditos;
@@ -391,12 +398,16 @@
     var controle = "AbortController" in window ? new AbortController() : null;
     var tempo = setTimeout(function () { if (controle) controle.abort(); }, 12000);
 
-    fetch(T.dados, controle ? { signal: controle.signal } : undefined)
-      .then(function (r) {
+    var opcoes = controle ? { signal: controle.signal } : undefined;
+    function buscar(arquivo) {
+      return fetch(arquivo, opcoes).then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
-      })
-      .then(function (dados) {
+      });
+    }
+    Promise.all([buscar(T.dados), T.dadosExtra ? buscar(T.dadosExtra) : []])
+      .then(function (listas) {
+        var dados = listas[0].concat(listas[1]);
         clearTimeout(tempo);
         if (TEMA === "futebol") prepararClubes(dados); else prepararPaises(dados);
         if (!estado.pool.length) throw new Error("lista vazia");
@@ -501,7 +512,7 @@
     };
     if (TEMA === "futebol") {
       el.img.removeAttribute("srcset");
-      el.img.src = "escudos/" + alvo.codigo + ".svg";
+      el.img.src = "escudos/" + alvo.arquivo;
     } else {
       el.img.srcset = CDN_BANDEIRAS + "w1280/" + alvo.codigo + ".png 2x";
       el.img.src = CDN_BANDEIRAS + "w640/" + alvo.codigo + ".png";
@@ -603,6 +614,7 @@
   function buscarSugestoes(chave, limite) {
     var achados = [];
     estado.paises.forEach(function (p) {
+      if (p.soNaRegiao) return; // o escudo antigo tem o mesmo nome do atual
       var melhor = -1;
       p.nomes.forEach(function (n) {
         var nome = normalizar(n);
@@ -651,7 +663,7 @@
       return;
     }
     var chave = normalizar(el.campo.value);
-    var todos = chave ? buscarSugestoes(chave, Infinity) : estado.paises.slice()
+    var todos = chave ? buscarSugestoes(chave, Infinity) : estado.paises.filter(function (p) { return !p.soNaRegiao; })
       .sort(function (a, b) { return a.nome.localeCompare(b.nome, "pt"); });
     if (!todos.length) {
       falar("nao_existe", { chute: el.campo.value.trim() }, "desdem");
@@ -1062,7 +1074,7 @@
       el.img.hidden = false;
     };
     el.img.onerror = null;
-    if (TEMA === "futebol") { el.img.removeAttribute("srcset"); el.img.src = "escudos/" + alvo.codigo + ".svg"; }
+    if (TEMA === "futebol") { el.img.removeAttribute("srcset"); el.img.src = "escudos/" + alvo.arquivo; }
     else { el.img.srcset = CDN_BANDEIRAS + "w1280/" + alvo.codigo + ".png 2x"; el.img.src = CDN_BANDEIRAS + "w640/" + alvo.codigo + ".png"; }
     falar("diario_jogado", { pais: alvo.nome }, "desdem", "inicio");
     encerrar(jogo.acertou ? "Hoje você acertou, era" : "Hoje era",
@@ -1151,7 +1163,7 @@
     el.form.hidden = true;
     el.fimRotulo.textContent = rotulo;
     el.fimPais.textContent = estado.alvo.nome;
-    el.fimPlacar.textContent = placar;
+    el.fimPlacar.textContent = placar + (estado.alvo.versao ? " Este foi o escudo " + estado.alvo.versao + " da história do clube." : "");
     el.formCapital.hidden = true;
     el.fim.hidden = false;
     setEstado("fim");

@@ -20,6 +20,7 @@ Como funciona
 * **Dica:** cada chute errado mostra a distância, a direção no mapa-múndi e a proximidade.
 * **Capital:** depois de acertar o país, acertar a capital dá 50% de bônus.
 * **Futebol:** o mesmo jogo com 167 escudos de clubes do Brasil (36: a Série A de 2026 e clubes tradicionais), Inglaterra, Espanha, Itália e Alemanha (e 2 de Portugal no "Todos"). A dica mede a distância entre os estádios e o bônus pergunta a cidade do clube.
+* **Retrô:** liga da página de futebol com 195 escudos antigos de 35 clubes brasileiros (até 6 versões de cada, sem a atual). No fim da rodada aparece qual versão era, por exemplo "escudo 8 de 14 da história do clube". Os antigos não entram no "Todos" nem no Diário.
 
 Arquivos
 --------
@@ -40,6 +41,8 @@ Fontes
 * Nomes de capitais em português do Brasil: `ferramentas/capitais-br.json`
 * Escudos e dados dos clubes: [FCLOGO](https://github.com/FCLOGO/fclogo.top) (código em licença MIT; os arquivos dos escudos dizem "para uso pessoal, não comercial"). 
 * Escudos dos clubes brasileiros: [escudos-futebol-api](https://github.com/washingtonos/escudos-futebol-api), de Washington Oliveira (o repositório não declara licença).
+* Escudos antigos: [Escudoteca, Gazeta dos Brasões do Futebol](https://escudoteca.com/), usados com autorização da responsável pelo site, para um jogo de incentivo ao estudo. Gerados por `ferramentas/gerar-retro.py`.
+* Todos os escudos são propriedade de seus respectivos clubes e federações. O Flagx não reivindica nenhuma titularidade sobre eles.
 * Os escudos são marcas registradas dos clubes; o Flagx é um projeto de fã, sem fins comerciais.
 
 Para rodar no computador: `python3 -m http.server` nesta pasta e depois http://localhost:8000

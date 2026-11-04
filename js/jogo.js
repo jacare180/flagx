@@ -2,7 +2,9 @@
 (function () {
   "use strict";
 
-  var API_PAISES = "https://restcountries.com/v3.1/all?fields=name,translations,cca2,region,latlng,independent,altSpellings";
+  // Dados dos países guardados no próprio jogo (projeto mledoze/countries, licença ODbL).
+  // A API REST Countries v3.1 foi desativada, por isso não dependemos mais dela.
+  var API_PAISES = "dados/paises.json";
   var CDN_BANDEIRAS = "https://flagcdn.com/";
   var PONTOS_POR_PECA = 20;
   var TOTAL_PECAS = 6;

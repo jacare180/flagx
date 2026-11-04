@@ -42,6 +42,13 @@ window.FLAGX_MENSAGENS = {
     "Inventou um país agora? Escolhe um da lista, por favor.",
   ],
 
+  // O que foi digitado não é exato, mas parece com alguns países. Aparece junto com as sugestões.
+  sugestoes: [
+    "\"{chute}\"? Deixa eu adivinhar o que você quis dizer. Escolhe aí.",
+    "Escreve direito que eu não sou dicionário. Algum desses?",
+    "Faltou letra aí. Clica no país que você quis dizer.",
+  ],
+
   // O jogador repetiu um chute desta rodada. Não gasta chute.
   repetido: [
     "Você já chutou {chute}. Continua errado, caso esteja curioso.",

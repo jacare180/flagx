@@ -80,11 +80,14 @@
       <form class="chute" id="form-chute" autocomplete="off" novalidate>
         <label for="campo-chute">Seu chute</label>
         <div class="chute__linha">
-          <input id="campo-chute" name="chute" type="text" list="lista-paises" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Digite um país" aria-describedby="aviso-chute" disabled>
+          <input id="campo-chute" name="chute" type="text" inputmode="text" autocapitalize="words" spellcheck="false" placeholder="Digite um país e aperte Enter" aria-describedby="aviso-chute" disabled>
           <button class="btn btn--primario" id="botao-chute" type="submit" disabled>Chutar</button>
         </div>
         <p class="aviso" id="aviso-chute"></p>
-        <datalist id="lista-paises"></datalist>
+        <div class="sugestoes" id="sugestoes" hidden>
+          <p class="sugestoes__titulo" id="sugestoes-titulo">Você quis dizer</p>
+          <ul class="sugestoes__lista" id="sugestoes-lista" aria-labelledby="sugestoes-titulo"></ul>
+        </div>
         <button class="link" id="botao-desisto" type="button" disabled>Desisto, mostra a resposta</button>
       </form>
 

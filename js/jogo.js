@@ -8,6 +8,7 @@
   var CDN_BANDEIRAS = "https://flagcdn.com/";
   var PONTOS_POR_PECA = 20;
   var TOTAL_PECAS = 6;
+  var ESPERA_BANDEIRA = 1000; // milissegundos antes de mostrar a bandeira e abrir o primeiro pedaço
   var CHAVE_RECORDE = "flagx.recorde";
 
   // A API traz os nomes em português de Portugal. Aqui ficam os nomes usados no Brasil:
@@ -202,8 +203,11 @@
     atualizarProgresso();
     travarForm(true);
 
-    el.img.onload = function () {
-      if (estado.alvo !== alvo) return;
+    // A bandeira só aparece depois que ela carregou E passou o tempo de espera,
+    // assim os quadrados já estão no lugar e ninguém vê a resposta antes da hora.
+    var carregou = false, esperou = false;
+    function comecar() {
+      if (!carregou || !esperou || estado.alvo !== alvo) return;
       var w = el.img.naturalWidth || 3, h = el.img.naturalHeight || 2;
       el.quadro.style.setProperty("--proporcao", w + " / " + h);
       el.img.hidden = false;
@@ -212,7 +216,9 @@
       travarForm(false);
       falar("inicio", { pais: alvo.nome }, "neutro");
       el.campo.focus({ preventScroll: true });
-    };
+    }
+    setTimeout(function () { esperou = true; comecar(); }, ESPERA_BANDEIRA);
+    el.img.onload = function () { carregou = true; comecar(); };
     el.img.onerror = function () {
       if (estado.alvo !== alvo) return;
       if (tentativa < 3) novaRodada(tentativa + 1); else mostrarFalha();
@@ -221,8 +227,12 @@
     el.img.src = CDN_BANDEIRAS + "w640/" + alvo.codigo + ".png";
   }
 
+  // Fecha os quadrados na hora, sem animação, para não deixar a bandeira aparecer.
   function fecharPecas() {
+    el.pecas.classList.add("sem-animacao");
     Array.prototype.forEach.call(el.pecas.children, function (p) { p.classList.remove("is-aberta"); });
+    void el.pecas.offsetWidth;
+    el.pecas.classList.remove("sem-animacao");
   }
 
   function abrirProxima() {
@@ -265,15 +275,36 @@
     el.campo.removeAttribute("aria-invalid");
   }
 
-  function registrarChute(pais, certo) {
+  function registrarChute(pais, certo, dica) {
     var li = document.createElement("li");
     if (certo) li.className = "is-certo";
     var nome = document.createElement("span");
+    nome.className = "chute__nome";
     nome.textContent = pais.nome;
-    var res = document.createElement("span");
-    res.className = "resultado";
-    res.textContent = certo ? "acertou" : "errou";
-    li.append(nome, res);
+    li.appendChild(nome);
+
+    if (certo || !dica) {
+      var res = document.createElement("span");
+      res.className = "resultado";
+      res.textContent = certo ? "acertou" : "errou";
+      li.appendChild(res);
+    } else {
+      var km = document.createElement("span");
+      km.className = "chute__km num";
+      km.textContent = dica.texto;
+      var seta = document.createElement("span");
+      seta.className = "chute__seta";
+      seta.appendChild(criarSeta(dica.rumo));
+      var detalhe = document.createElement("span");
+      detalhe.className = "chute__detalhe";
+      detalhe.textContent = "Fica " + dica.direcao + " daqui. " + dica.proximidade + "% de proximidade.";
+      var barra = document.createElement("span");
+      barra.className = "chute__barra";
+      barra.setAttribute("aria-hidden", "true");
+      barra.style.setProperty("--perto", dica.proximidade / 100);
+      li.classList.add("tem-dica");
+      li.append(km, seta, detalhe, barra);
+    }
     el.chutes.appendChild(li);
     el.chutesVazio.hidden = true;
   }
@@ -422,14 +453,81 @@
       return;
     }
 
-    registrarChute(pais, false);
+    var dica = calcularPista(pais, estado.alvo);
+    registrarChute(pais, false, dica);
     if (estado.abertas >= TOTAL_PECAS) {
       perder("derrota", "zoando");
       return;
     }
     abrirProxima();
-    falar("erro", { chute: pais.nome, pais: estado.alvo.nome }, "zoando");
+    var dados = { chute: pais.nome, pais: estado.alvo.nome };
+    var categoria = "erro";
+    if (dica) {
+      dados.distancia = dica.texto;
+      dados.direcao = dica.direcao;
+      dados.proximidade = dica.proximidade + "%";
+      categoria = dica.km < DISTANCIA_PERTO ? "erro_perto" : dica.km > DISTANCIA_LONGE ? "erro_longe" : "erro";
+      if (!M[categoria] || !M[categoria].length) categoria = "erro";
+    }
+    falar(categoria, dados, "zoando");
     el.campo.focus();
+  }
+
+  /* ---------- dica de direção e distância ---------- */
+
+  var DISTANCIA_PERTO = 1500;   // km: abaixo disso o jacaré fala que está perto
+  var DISTANCIA_LONGE = 9000;   // km: acima disso o jacaré fala que está longe
+  var MEIA_VOLTA_TERRA = 20015; // km: a maior distância possível entre dois pontos
+  var DIRECOES = [
+    { nome: "norte", com: "ao norte" }, { nome: "nordeste", com: "a nordeste" },
+    { nome: "leste", com: "a leste" }, { nome: "sudeste", com: "a sudeste" },
+    { nome: "sul", com: "ao sul" }, { nome: "sudoeste", com: "a sudoeste" },
+    { nome: "oeste", com: "a oeste" }, { nome: "noroeste", com: "a noroeste" },
+  ];
+
+  function radianos(g) { return g * Math.PI / 180; }
+
+  // Distância e rumo do país chutado até o país certo, usando o centro de cada país.
+  function calcularPista(de, para) {
+    if (!de.latlng || !para.latlng || de.latlng.length < 2 || para.latlng.length < 2) return null;
+    var f1 = radianos(de.latlng[0]), f2 = radianos(para.latlng[0]);
+    var dl = radianos(para.latlng[1] - de.latlng[1]);
+    var df = f2 - f1;
+    var a = Math.sin(df / 2) * Math.sin(df / 2) + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) * Math.sin(dl / 2);
+    var km = 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
+    // Direção como no mapa-múndi tradicional (Américas à esquerda, Ásia à direita),
+    // não pela curva do globo nem dando a volta pelo Pacífico, para a seta bater
+    // com o mapa que o jogador tem na cabeça. A distância continua sendo a real.
+    var dlMapa = dl;
+    var dPsi = Math.log(Math.tan(Math.PI / 4 + f2 / 2) / Math.tan(Math.PI / 4 + f1 / 2));
+    var rumo = (Math.atan2(dlMapa, dPsi) * 180 / Math.PI + 360) % 360;
+    var dir = DIRECOES[Math.round(rumo / 45) % 8];
+    var redondo = km < 100 ? Math.round(km) : Math.round(km / 10) * 10;
+    return {
+      km: km,
+      rumo: rumo,
+      nomeDirecao: dir.nome,
+      direcao: dir.com,
+      texto: redondo.toLocaleString("pt-BR") + " km",
+      proximidade: Math.max(0, Math.round((1 - km / MEIA_VOLTA_TERRA) * 100)),
+    };
+  }
+
+  function criarSeta(rumo) {
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", "seta-rumo");
+    var g = document.createElementNS(ns, "g");
+    g.setAttribute("transform", "rotate(" + rumo.toFixed(0) + " 12 12)");
+    var p = document.createElementNS(ns, "path");
+    p.setAttribute("d", "M12 3 L19 12 H14.5 V21 H9.5 V12 H5 Z");
+    g.appendChild(p);
+    svg.appendChild(g);
+    return svg;
   }
 
   function vencer() {

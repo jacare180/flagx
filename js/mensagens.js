@@ -9,6 +9,11 @@
  *   {chute}   o que o jogador digitou
  *   {pontos}  pontos ganhos na rodada
  *   {pedacos} quantos pedaços estavam à mostra
+ *
+ * Só nas falas de chute errado (erro, erro_perto, erro_longe):
+ *   {distancia}    distância do chute até o país certo, por exemplo "2.400 km"
+ *   {direcao}      para que lado fica o país certo, já com "ao" ou "a", por exemplo "a nordeste" ou "ao sul"
+ *   {proximidade}  o quanto o chute chegou perto, por exemplo "87%"
  */
 window.FLAGX_MENSAGENS = {
   carregando: [
@@ -24,8 +29,24 @@ window.FLAGX_MENSAGENS = {
     "Essa é fácil. Mentira, não faço ideia. Mas você deveria saber.",
   ],
 
-  // Chute errado, com pedaços sobrando.
+  // Chute errado e PERTO do país certo (menos de 1.500 km).
+  erro_perto: [
+    "{chute}? Tá quente. O país certo fica {direcao}, a {distancia}. Quase dá para ir a pé.",
+    "Errou, mas errou perto. {distancia} {direcao}. Não comemora ainda.",
+    "{chute} é vizinho de quem você procura. Vai {direcao}.",
+  ],
+
+  // Chute errado e LONGE do país certo (mais de 9.000 km).
+  erro_longe: [
+    "{chute}? Você errou de continente. O certo está a {distancia} daqui.",
+    "{distancia} de distância. Nem avião aguenta o tamanho desse erro.",
+    "Frio, gelado, Antártida. Vai {direcao} e vai longe.",
+  ],
+
+  // Chute errado, nem perto nem longe. Também é usado se faltar alguma lista acima.
   erro: [
+    "{chute}? Errado. Fica {direcao}, a {distancia}.",
+    "Nem perto. São {distancia}, segue {direcao}.",
     "{chute}? Corajoso. Errado, mas corajoso.",
     "Não é {chute}. Toma mais um pedaço, já que você insiste.",
     "{chute}. Você jogou um dado ou pensou nisso?",

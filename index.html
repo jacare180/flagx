@@ -22,7 +22,6 @@
       </div>
       <dl class="placar" aria-label="Placar">
         <div id="placar-tempo" hidden><dt>Tempo</dt><dd class="num" id="tempo">60</dd></div>
-        <div id="placar-vidas" hidden><dt>Vidas</dt><dd class="coracoes" id="vidas" aria-label="3 de 3 vidas"><svg class="coracao" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21 3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z"/></svg><svg class="coracao" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21 3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z"/></svg><svg class="coracao" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21 3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z"/></svg></dd></div>
         <div><dt>Pontos</dt><dd class="num" id="pontos">0</dd></div>
         <div><dt id="rotulo-sequencia">Sequência</dt><dd class="num" id="sequencia">0</dd></div>
         <div><dt>Recorde</dt><dd class="num" id="recorde">0</dd></div>
@@ -34,29 +33,10 @@
     <section class="mesa" aria-labelledby="titulo-mesa">
       <div class="mesa__cabeca">
         <h1 id="titulo-mesa">Que bandeira é essa?</h1>
-        <form class="ajustes" id="ajustes" aria-label="Ajustes do jogo">
-          <fieldset class="seg">
-            <legend class="visually-hidden">Modo de jogo</legend>
-            <input type="radio" name="modo" id="m-classico" value="classico" checked><label for="m-classico">Clássico</label>
-            <input type="radio" name="modo" id="m-sobrevivencia" value="sobrevivencia"><label for="m-sobrevivencia">Sobrevivência</label>
-            <input type="radio" name="modo" id="m-relogio" value="relogio"><label for="m-relogio">Contra o relógio</label>
-            <input type="radio" name="modo" id="m-diario" value="diario"><label for="m-diario">Diário</label>
-          </fieldset>
-          <fieldset class="seg" id="seg-regiao">
-            <legend class="visually-hidden">Região</legend>
-            <input type="radio" name="regiao" id="r-mundo" value="mundo" checked><label for="r-mundo">Mundo</label>
-            <input type="radio" name="regiao" id="r-africa" value="africa"><label for="r-africa">África</label>
-            <input type="radio" name="regiao" id="r-americas" value="americas"><label for="r-americas">Américas</label>
-            <input type="radio" name="regiao" id="r-asia" value="asia"><label for="r-asia">Ásia</label>
-            <input type="radio" name="regiao" id="r-europa" value="europa"><label for="r-europa">Europa</label>
-            <input type="radio" name="regiao" id="r-oceania" value="oceania"><label for="r-oceania">Oceania</label>
-          </fieldset>
-          <div class="dificil">
-            <input type="checkbox" id="ajuste-dificil" name="dificil" aria-describedby="dificil-explica">
-            <label for="ajuste-dificil">Difícil</label>
-            <span class="dificil__explica" id="dificil-explica" data-texto>Sem cor, espelhada, com territórios. Pontos em dobro.</span>
-          </div>
-        </form>
+        <div class="resumo">
+          <p class="resumo__texto" id="resumo"></p>
+          <button class="btn btn--secundario btn--baixo" id="botao-trocar" type="button" aria-haspopup="dialog" aria-controls="painel">Trocar</button>
+        </div>
       </div>
 
       <figure class="quadro" id="quadro" aria-describedby="progresso">
@@ -72,7 +52,7 @@
       </figure>
 
       <p class="progresso" id="progresso">
-        <span><strong class="num" id="reveladas">0</strong> de 6 pedaços à mostra</span>
+        <span class="progresso__pedacos"><strong class="num" id="reveladas">0</strong> de 6 pedaços à mostra</span>
         <span>Vale <strong class="num" id="valor">0</strong> pontos</span>
       </p>
     </section>
@@ -116,6 +96,7 @@
           </button>
           <button class="btn btn--primario" id="botao-chute" type="submit" disabled>Chutar</button>
         </div>
+        <div class="alternativas" id="alternativas" role="group" aria-label="Escolha uma das quatro opções"></div>
         <p class="aviso" id="aviso-chute"></p>
         <div class="sugestoes" id="sugestoes" hidden>
           <p class="sugestoes__titulo" id="sugestoes-titulo">Você quis dizer</p>
@@ -146,12 +127,73 @@
         <button class="btn btn--secundario" id="botao-tentar" type="button">Tentar de novo</button>
       </div>
 
+      <div class="vidas" id="placar-vidas" hidden>
+        <span class="vidas__rotulo">Vidas</span>
+        <span class="coracoes" id="vidas" role="img" aria-label="3 de 3 vidas"><svg class="coracao" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21 3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z"/></svg><svg class="coracao" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21 3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z"/></svg><svg class="coracao" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21 3.5 12.5A5 5 0 0 1 12 6a5 5 0 0 1 8.5 6.5Z"/></svg></span>
+      </div>
+
       <section class="chutes" aria-labelledby="titulo-chutes">
         <h2 id="titulo-chutes">Chutes desta rodada</h2>
         <ol class="chutes__lista" id="lista-chutes"></ol>
         <p class="chutes__vazio" id="chutes-vazio">Nenhum chute ainda. O jacaré está esperando.</p>
       </section>
     </section>
+
+    <dialog class="painel" id="painel" aria-labelledby="painel-titulo">
+      <form class="ajustes" id="ajustes" novalidate>
+        <h2 class="painel__titulo" id="painel-titulo">Antes de começar</h2>
+
+        <section class="ajustes__grupo" aria-labelledby="t-jeito">
+          <h3 id="t-jeito">Jeito de jogar</h3>
+          <div class="ajustes__pares">
+            <fieldset class="seg" id="seg-bandeira">
+              <legend id="legenda-bandeira">Bandeira</legend>
+              <input type="radio" name="bandeira" id="b-pedacos" value="pedacos" checked><label for="b-pedacos">Em pedaços</label>
+              <input type="radio" name="bandeira" id="b-inteira" value="inteira"><label for="b-inteira" id="rotulo-inteira">Inteira</label>
+            </fieldset>
+            <fieldset class="seg" id="seg-resposta">
+              <legend>Resposta</legend>
+              <input type="radio" name="resposta" id="a-digitar" value="digitar" checked><label for="a-digitar">Digitar</label>
+              <input type="radio" name="resposta" id="a-alternativas" value="alternativas"><label for="a-alternativas">Alternativas</label>
+            </fieldset>
+          </div>
+          <p class="ajustes__nota" id="nota-jeito"></p>
+        </section>
+
+        <section class="ajustes__grupo" aria-labelledby="t-modo">
+          <h3 id="t-modo">Modo</h3>
+          <fieldset class="seg">
+            <legend class="visually-hidden">Modo de jogo</legend>
+            <input type="radio" name="modo" id="m-classico" value="classico" checked><label for="m-classico">Clássico</label>
+            <input type="radio" name="modo" id="m-relogio" value="relogio"><label for="m-relogio">Contra o relógio</label>
+            <input type="radio" name="modo" id="m-diario" value="diario"><label for="m-diario">Diário</label>
+          </fieldset>
+          <p class="ajustes__nota" id="nota-modo"></p>
+        </section>
+
+        <section class="ajustes__grupo" aria-labelledby="t-regioes">
+          <h3 id="t-regioes">Regiões</h3>
+          <fieldset class="seg" id="seg-regiao">
+            <legend class="visually-hidden" id="legenda-regioes">Regiões, marque quantas quiser</legend>
+          </fieldset>
+          <p class="ajustes__nota" id="nota-regioes">Marque quantas quiser. Sem nenhuma marcada, vale o mundo todo.</p>
+        </section>
+
+        <section class="ajustes__grupo" aria-labelledby="t-dificil">
+          <h3 id="t-dificil">Dificuldade</h3>
+          <div class="dificil">
+            <input type="checkbox" id="ajuste-dificil" name="dificil" aria-describedby="dificil-explica">
+            <label for="ajuste-dificil">Difícil</label>
+            <span class="dificil__explica" id="dificil-explica">Sem cor, espelhada, com territórios. Pontos em dobro.</span>
+          </div>
+        </section>
+
+        <div class="painel__acoes">
+          <button class="btn btn--primario" id="botao-jogar" type="submit">Jogar</button>
+          <button class="btn btn--secundario" id="botao-cancelar" type="button">Voltar sem mudar</button>
+        </div>
+      </form>
+    </dialog>
 
     <noscript><p class="falha">O Flagx precisa de JavaScript ligado para sortear as bandeiras.</p></noscript>
   </main>

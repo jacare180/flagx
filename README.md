@@ -11,16 +11,27 @@ Escudos de futebol: https://jacare180.github.io/flagx/?tema=futebol (ou o ícone
 Como funciona
 -------------
 
-* **Clássico:** uma bandeira por vez, pontos acumulando. Acertar com 1 pedaço vale 120 pontos e cada pedaço a mais tira 20.
-* **Contra o relógio:** 60 segundos. Os pedaços abrem sozinhos a cada 2,5 segundos e a próxima bandeira entra assim que você acerta. O recorde é a maior pontuação.
-* **Diário:** uma bandeira por dia, igual para todo mundo (o dia vira no horário de Brasília), sempre no mundo todo e sem modo difícil. Conta os dias seguidos de acerto e tem um botão para copiar o resultado com quadradinhos, sem revelar a resposta.
-* **Sobrevivência:** 3 vidas, mostradas como corações no placar. Cada chute errado ou desistência tira uma, e o coração fica cinza. Começa pelos países mais populosos (os mais conhecidos) e a cada acerto entram países menos famosos.
-* **Região:** mundo todo, África, Américas, Ásia, Europa ou Oceania.
+Antes de começar, um painel pede quatro escolhas (o botão "Trocar" reabre o painel):
+
+* **Jeito de jogar:** a bandeira vem **em pedaços** ou **inteira**, e a resposta é **digitando** ou escolhendo entre **4 alternativas**.
+  * Em pedaços e digitando: acertar com 1 pedaço vale 120 pontos e cada pedaço a mais tira 20.
+  * Inteira e digitando: 60 pontos.
+  * Em pedaços com alternativas: metade do valor dos pedaços. Cada erro abre um pedaço e risca a opção errada.
+  * Inteira com alternativas: 30 pontos.
+  * As alternativas também podem ser escolhidas pelas teclas 1 a 4. No difícil, as erradas são bandeiras parecidas, como Romênia e Chade.
+* **Modo:**
+  * **Clássico:** 3 vidas, mostradas como corações acima dos chutes. Cada erro ou desistência tira uma. Começa pelos países mais conhecidos e vai abrindo para os menos famosos.
+  * **Contra o relógio:** 60 segundos. Em pedaços, eles abrem sozinhos a cada 2,5 segundos.
+  * **Diário:** uma bandeira por dia, igual para todo mundo (o dia vira no horário de Brasília). É sempre em pedaços e digitando, com todas as regiões e sem difícil. Conta os dias seguidos de acerto e tem um botão para copiar o resultado com quadradinhos.
+* **Regiões:** África, Américas, Ásia, Europa e Oceania. Marque quantas quiser; sem nenhuma marcada, vale o mundo todo.
 * **Difícil:** bandeira sem cor e espelhada, com 41 territórios a mais. Pontos em dobro.
+
+Cada combinação de modo e jeito de jogar tem o seu recorde.
+
 * **Dica:** cada chute errado mostra a distância, a direção no mapa-múndi e a proximidade.
 * **Capital:** depois de acertar o país, acertar a capital dá 50% de bônus.
-* **Futebol:** o mesmo jogo com 167 escudos de clubes do Brasil (36: a Série A de 2026 e clubes tradicionais), Inglaterra, Espanha, Itália e Alemanha (e 2 de Portugal no "Todos"). A dica mede a distância entre os estádios e o bônus pergunta a cidade do clube.
-* **Retrô:** liga da página de futebol com 195 escudos antigos de 35 clubes brasileiros (até 6 versões de cada, sem a atual). No fim da rodada aparece qual versão era, por exemplo "escudo 8 de 14 da história do clube". Os antigos não entram no "Todos" nem no Diário.
+* **Futebol:** o mesmo jogo com 167 escudos de clubes do Brasil (36: a Série A de 2026 e clubes tradicionais), Inglaterra, Espanha, Itália e Alemanha (e 2 de Portugal quando nenhuma liga está marcada). A dica mede a distância entre os estádios e o bônus pergunta a cidade do clube.
+* **Retrô:** liga da página de futebol com 195 escudos antigos de 35 clubes brasileiros (até 6 versões de cada, sem a atual). No fim da rodada aparece qual versão era, por exemplo "escudo 8 de 14 da história do clube". Os antigos só entram quando o Retrô está marcado e nunca no Diário.
 
 Arquivos
 --------

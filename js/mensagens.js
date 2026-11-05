@@ -41,27 +41,46 @@ window.FLAGX_MENSAGENS = {
     "Pontos em dobro, vergonha em dobro também.",
   ],
 
-  // Primeira rodada de uma corrida no modo Sobrevivência.
+  // Início de rodada com a bandeira inteira à mostra (jeito de jogar "Inteira").
+  inicio_inteira: [
+    "Inteira, sem pedaço nenhum na frente. Se errar essa, não tem desculpa.",
+    "Tá tudo aí na sua cara. Agora é só lembrar o nome.",
+    "Bandeira inteira. Até minha avó acertaria. Mostra que você é melhor que ela.",
+  ],
+
+  // Início de rodada com quatro alternativas.
+  inicio_alternativas: [
+    "Quatro opções, uma certa. Até chutando você tem 25% de chance.",
+    "Escolhe uma. Sem pressão, mas eu tô julgando.",
+  ],
+
+  // Acertou com a bandeira inteira à mostra.
+  acerto_inteira: [
+    "{pais}. Com ela inteira na sua frente, era o mínimo.",
+    "Isso, {pais}. Não vou bater palma, tava fácil.",
+  ],
+
+  // Primeira rodada de uma corrida no modo Clássico (3 vidas).
   sobrevivencia_inicio: [
-    "Sobrevivência. Três vidas, nenhuma piedade. Começa pelas fáceis, depois eu fico malvado.",
+    "Clássico. Três vidas, nenhuma piedade. Começa pelas fáceis, depois eu fico malvado.",
     "Três vidas. Aposto que você não passa de dez bandeiras.",
   ],
 
-  // Sobrevivência: perdeu uma vida, mas ainda tem outras.
+  // Clássico: perdeu uma vida, mas ainda tem outras.
   perdeu_vida: [
     "Era {pais}. Lá se vai uma vida. Sobraram {vidas}.",
     "{pais}, campeão. Menos uma vida. Eu tô contando.",
     "Era {pais}. Ainda tem {vidas} vida(s), mas no seu ritmo não dura muito.",
   ],
 
-  // Sobrevivência: chute errado, perdeu uma vida e a rodada continua.
+  // Clássico: chute errado, perdeu uma vida e a rodada continua.
   erro_vida: [
     "{chute}? Errado. Lá se vai uma vida, sobraram {vidas}.",
     "{chute} não. Um coração a menos. Eu tô contando.",
     "Errou de novo, campeão. Só {vidas} coração(ões) separando você do vexame.",
   ],
 
-  // Sobrevivência: acabaram as vidas.
+  // Clássico: acabaram as vidas.
   fim_de_jogo: [
     "Era {pais}. Fim de jogo. {acertos} bandeiras, nada mal para quem chuta tanto.",
     "Acabou. {acertos} acertos e {pontos} pontos. O jacaré já viu piores. Poucos, mas viu.",
@@ -220,8 +239,23 @@ window.FLAGX_MENSAGENS_FUTEBOL = {
     "Modo difícil. Nem o roupeiro do clube reconhece assim.",
   ],
 
+  inicio_inteira: [
+    "Escudo inteiro na tela. Se errar, devolve a camisa.",
+    "Tá tudo aí. Nem o narrador erraria essa.",
+  ],
+
+  inicio_alternativas: [
+    "Quatro clubes, um certo. Vale até chutar no ângulo.",
+    "Escolhe um. O VAR tá olhando.",
+  ],
+
+  acerto_inteira: [
+    "{pais}. Com o escudo inteiro na tela, era obrigação.",
+    "Isso, {pais}. Gol de pênalti sem goleiro.",
+  ],
+
   sobrevivencia_inicio: [
-    "Sobrevivência. Três vidas e começa pelos gigantes. Depois vem a segunda divisão.",
+    "Clássico. Três vidas e começa pelos gigantes. Depois vem a segunda divisão.",
     "Três vidas. Aposto que você cai antes da metade do campeonato.",
   ],
 

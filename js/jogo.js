@@ -1,4 +1,5 @@
-/* Flagx: modos clássico e sobrevivência, filtro de região, modo difícil e bônus da capital. */
+/* Flagx: jeito de jogar (pedaços ou inteira, digitar ou alternativas), modos clássico, relógio e diário,
+ * regiões, modo difícil e bônus da capital. */
 (function () {
   "use strict";
 
@@ -23,9 +24,9 @@
       bonus: "Vale 50% de bônus: qual é a capital?", placeholderBonus: "Digite a capital",
       bonusCerto: "Isso, {r}. Mais {p} pontos de bônus.", bonusErrado: "Não. A capital é {r}.",
       explicaDificil: "Sem cor, espelhada, com territórios. Pontos em dobro.",
-      regiaoPadrao: "mundo",
+      palavra: "Bandeira", inteira: "Inteira", oItem: "A bandeira", coberto: "coberta", nenhumaRegiao: "Mundo todo",
+      tituloRegioes: "Regiões", notaRegioes: "Marque quantas quiser. Sem nenhuma marcada, vale o mundo todo.",
       regioes: [
-        { valor: "mundo", rotulo: "Mundo", filtro: null },
         { valor: "africa", rotulo: "África", filtro: "Africa" },
         { valor: "americas", rotulo: "Américas", filtro: "Americas" },
         { valor: "asia", rotulo: "Ásia", filtro: "Asia" },
@@ -50,9 +51,9 @@
       bonus: "Vale 50% de bônus: de que cidade é o clube?", placeholderBonus: "Digite a cidade",
       bonusCerto: "Isso, {r}. Mais {p} pontos de bônus.", bonusErrado: "Não. O clube é de {r}.",
       explicaDificil: "Sem cor e espelhado. Pontos em dobro.",
-      regiaoPadrao: "todos",
+      palavra: "Escudo", inteira: "Inteiro", oItem: "O escudo", coberto: "coberto", nenhumaRegiao: "Todas as ligas",
+      tituloRegioes: "Ligas", notaRegioes: "Marque quantas quiser. Sem nenhuma marcada, valem todas (o Retrô só entra se for marcado).",
       regioes: [
-        { valor: "todos", rotulo: "Todos", filtro: null },
         { valor: "inglaterra", rotulo: "Inglaterra", filtro: "inglaterra" },
         { valor: "espanha", rotulo: "Espanha", filtro: "espanha" },
         { valor: "italia", rotulo: "Itália", filtro: "italia" },
@@ -72,14 +73,18 @@
   var CHAVE_AJUSTES = T.prefixo + ".ajustes";
   var MULTIPLICADOR_DIFICIL = 2;
   var BONUS_CAPITAL = 0.5;          // a capital certa vale mais 50% dos pontos da rodada
-  var VIDAS_SOBREVIVENCIA = 3;
-  var ERROS_SEM_CUSTO = 0;          // Sobrevivência: chutes errados por rodada que não tiram vida (0 = todo erro tira)
+  var VIDAS_SOBREVIVENCIA = 3;      // vidas do modo Clássico
+  var ERROS_SEM_CUSTO = 0;          // Clássico: chutes errados por rodada que não tiram vida (0 = todo erro tira)
+  // Pontos de cada jeito de jogar. Em pedaços, vale (7 - pedaços abertos) x 20; com alternativas, a metade.
+  var PONTOS_INTEIRA = 60;          // bandeira inteira, digitando
+  var PONTOS_INTEIRA_ALTERNATIVAS = 30;
+  var TOTAL_ALTERNATIVAS = 4;
   // Contra o relógio
   var TEMPO_RELOGIO = 60;           // segundos de partida
   var REVELAR_A_CADA = 2500;        // ms entre um pedaço e outro, revelados sozinhos
   var PAUSA_ENTRE_RODADAS = 900;    // ms mostrando a resposta antes da próxima
   var ESPERA_RELOGIO = 400;         // espera menor antes de mostrar a bandeira
-  // Sobrevivência: começa só com os países mais populosos (os mais conhecidos)
+  // Clássico: começa só com os países mais populosos (os mais conhecidos)
   // e a cada acerto abre mais uma fatia da lista.
   var FAMA_INICIAL = 0.25;          // 25% mais populosos no começo
   var FAMA_POR_ACERTO = 0.05;       // mais 5% da lista a cada acerto
@@ -88,7 +93,20 @@
   // Territórios que usam a bandeira de outro país (impossíveis de acertar). Ficam fora do sorteio.
   var BANDEIRA_REPETIDA = ["hm", "bl", "gp", "gf", "mf", "yt", "re", "pm", "wf", "sh", "um", "bv", "sj", "mq", "nc"];
 
-  // Regiões do jogo. A Antártida só aparece no mundo todo.
+  // Bandeiras parecidas, usadas como alternativas erradas no modo difícil.
+  var GRUPOS_PARECIDOS = [
+    ["ro", "td", "ad", "md"], ["id", "mc", "pl", "sg"], ["ie", "ci", "it", "mx"], ["nl", "lu", "fr", "py", "ru"],
+    ["au", "nz", "fj", "tv"], ["no", "is", "dk", "se", "fi", "fo"], ["ve", "co", "ec"], ["sn", "ml", "gn", "cm"],
+    ["hn", "ni", "sv", "gt"], ["sy", "eg", "iq", "ye"], ["jo", "ps", "sd", "ae", "kw"], ["si", "sk", "rs", "ru", "hr"],
+    ["cu", "pr"], ["lr", "us", "my"], ["qa", "bh"], ["at", "lv", "lb", "pe"], ["be", "de"], ["tr", "tn"],
+    ["bg", "hu", "ir", "tj"], ["gh", "bo", "et", "lt"], ["ar", "uy", "sv"], ["cd", "cg", "tz"], ["bd", "jp", "pw"],
+  ];
+  var PARECIDAS = {};
+  GRUPOS_PARECIDOS.forEach(function (g) {
+    g.forEach(function (c) { PARECIDAS[c] = (PARECIDAS[c] || []).concat(g.filter(function (o) { return o !== c; })); });
+  });
+
+  // Regiões do jogo. A Antártida só entra quando nenhuma região está marcada.
   function filtroDaRegiao(valor) {
     for (var i = 0; i < T.regioes.length; i++) if (T.regioes[i].valor === valor) return T.regioes[i];
     return null;
@@ -128,12 +146,15 @@
     chutes: $("lista-chutes"), chutesVazio: $("chutes-vazio"),
     pontos: $("pontos"), sequencia: $("sequencia"), recorde: $("recorde"),
     ajustes: $("ajustes"), dificil: $("ajuste-dificil"),
+    resumo: $("resumo"), trocar: $("botao-trocar"), painel: $("painel"), cancelar: $("botao-cancelar"),
+    alternativas: $("alternativas"),
     placarVidas: $("placar-vidas"), vidas: $("vidas"), placarTempo: $("placar-tempo"), tempo: $("tempo"), rotuloSequencia: $("rotulo-sequencia"),
     compartilhar: $("botao-compartilhar"), compartilharAviso: $("compartilhar-aviso"),
     formCapital: $("form-capital"), capitalPergunta: $("capital-pergunta"), campoCapital: $("campo-capital"),
     botaoCapital: $("botao-capital"), capitalResultado: $("capital-resultado"),
   };
 
+  var ajustesSalvos = false; // vira true quando já existem ajustes guardados (o painel não abre sozinho)
   var estado = {
     paises: [], pool: [], indice: new Map(), recentes: [],
     alvo: null, ordem: [], abertas: 0, chutes: [], encerrada: true,
@@ -142,7 +163,7 @@
     vidas: VIDAS_SOBREVIVENCIA, fimDeJogo: false, primeiraDaCorrida: true,
     ganhoRodada: 0, capitalRespondida: true,
     tempo: TEMPO_RELOGIO, relogioAndando: false, cronometro: null, revelacao: null,
-    marcas: [],
+    marcas: [], erros: 0,
   };
   estado.recorde = lerRecorde();
 
@@ -184,17 +205,22 @@
     el.croc.setAttribute("data-humor", humor || "neutro");
   }
 
-  function emSobrevivencia() { return estado.ajustes.modo === "sobrevivencia"; }
+  // O Clássico tem 3 vidas (ele substituiu a antiga Sobrevivência).
+  function emSobrevivencia() { return estado.ajustes.modo === "classico"; }
   function emRelogio() { return estado.ajustes.modo === "relogio"; }
   function emDiario() { return estado.ajustes.modo === "diario"; }
+  // O Diário é sempre em pedaços e digitando, igual para todo mundo.
+  function bandeiraInteira() { return !emDiario() && estado.ajustes.bandeira === "inteira"; }
+  function comAlternativas() { return !emDiario() && estado.ajustes.resposta === "alternativas"; }
 
-  // Cada modo tem o seu recorde: no clássico é a maior sequência, na sobrevivência
-  // é o maior número de acertos numa corrida.
-  // No relógio o recorde é a maior pontuação de uma partida.
+  // Cada combinação de modo e jeito de jogar tem o seu recorde: no clássico é o maior número
+  // de acertos numa corrida, no relógio a maior pontuação. Em pedaços e digitando, as chaves
+  // são as antigas (da Sobrevivência e do relógio), para não perder recordes já feitos.
   function chaveRecorde() {
-    if (emSobrevivencia()) return CHAVE_RECORDE + ".sobrevivencia";
-    if (emRelogio()) return CHAVE_RECORDE + ".relogio";
-    return CHAVE_RECORDE;
+    var jeito = bandeiraInteira() || comAlternativas() ? "." + estado.ajustes.bandeira + "." + estado.ajustes.resposta : "";
+    if (emSobrevivencia()) return CHAVE_RECORDE + ".sobrevivencia" + jeito;
+    if (emRelogio()) return CHAVE_RECORDE + ".relogio" + jeito;
+    return CHAVE_RECORDE + ".diario";
   }
 
   function lerRecorde() {
@@ -206,12 +232,19 @@
   }
 
   function lerAjustes() {
-    var padrao = { modo: "classico", regiao: T.regiaoPadrao, dificil: false };
+    var padrao = { bandeira: "pedacos", resposta: "digitar", modo: "classico", regioes: [], dificil: false };
     try {
-      var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "{}");
-      if (salvo && filtroDaRegiao(salvo.regiao)) padrao.regiao = salvo.regiao;
-      if (salvo && salvo.dificil === true) padrao.dificil = true;
-      if (salvo && ["sobrevivencia", "relogio", "diario"].indexOf(salvo.modo) !== -1) padrao.modo = salvo.modo;
+      var salvo = JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || "null");
+      if (!salvo) return padrao;
+      ajustesSalvos = true;
+      if (salvo.bandeira === "inteira") padrao.bandeira = "inteira";
+      if (salvo.resposta === "alternativas") padrao.resposta = "alternativas";
+      // "sobrevivencia" e o antigo "classico" viram o Clássico de 3 vidas.
+      if (salvo.modo === "relogio" || salvo.modo === "diario") padrao.modo = salvo.modo;
+      // Antes era uma região só (salvo.regiao); agora é uma lista.
+      var lista = Array.isArray(salvo.regioes) ? salvo.regioes : salvo.regiao ? [salvo.regiao] : [];
+      padrao.regioes = lista.filter(function (v) { return filtroDaRegiao(v); });
+      padrao.dificil = salvo.dificil === true;
     } catch (e) { /* sem armazenamento, usa o padrão */ }
     return padrao;
   }
@@ -244,6 +277,7 @@
           regiao: p.region,
           latlng: p.latlng,
           independente: p.independent === true,
+          subregiao: p.subregion || null,
           capitais: p.capital || [],
           populacao: p.population || 0,
         };
@@ -289,15 +323,15 @@
   }
 
   // Quem pode ser sorteado: países independentes no modo normal; no difícil entram também
-  // os territórios com bandeira própria. Depois filtra pela região escolhida.
+  // os territórios com bandeira própria. Depois filtra pelas regiões marcadas (nenhuma = todas).
   function montarPool() {
-    var regiao = emDiario() ? null : (filtroDaRegiao(estado.ajustes.regiao) || {}).filtro;
+    var filtros = emDiario() ? [] : estado.ajustes.regioes.map(function (v) { return filtroDaRegiao(v).filtro; });
     var dificil = emDiario() ? false : estado.ajustes.dificil;
     estado.pool = estado.paises.filter(function (p) {
       if (TEMA === "bandeiras" && BANDEIRA_REPETIDA.indexOf(p.codigo) !== -1) return false;
       if (!p.independente && !dificil) return false;
-      if (p.soNaRegiao && regiao !== p.regiao) return false;
-      return regiao ? p.regiao === regiao : true;
+      if (!filtros.length) return !p.soNaRegiao;
+      return filtros.indexOf(p.regiao) !== -1;
     });
     estado.recentes = [];
   }
@@ -311,6 +345,11 @@
     el.campoCapital.placeholder = T.placeholderBonus;
     el.proxima.textContent = T.proxima;
     $("dificil-explica").textContent = T.explicaDificil;
+    $("legenda-bandeira").textContent = T.palavra;
+    $("rotulo-inteira").textContent = T.inteira;
+    $("t-regioes").textContent = T.tituloRegioes;
+    $("nota-regioes").textContent = T.notaRegioes;
+    $("legenda-regioes").textContent = T.tituloRegioes + ", marque quantas quiser";
     $("creditos").innerHTML = T.creditos;
     var troca = $("troca-tema");
     troca.href = T.trocaPara === "futebol" ? "./?tema=futebol" : "./";
@@ -322,7 +361,7 @@
     grupo.replaceChildren(legenda);
     T.regioes.forEach(function (r) {
       var input = document.createElement("input");
-      input.type = "radio";
+      input.type = "checkbox";
       input.name = "regiao";
       input.id = "r-" + r.valor;
       input.value = r.valor;
@@ -333,23 +372,106 @@
     });
   }
 
-  function aplicarAjustes() {
-    el.jogo.setAttribute("data-modo-dificil", estado.ajustes.dificil && !emDiario() ? "sim" : "nao");
-    // O diário é igual para todo mundo: sem escolha de região nem modo difícil.
-    $("seg-regiao").disabled = emDiario();
-    el.dificil.disabled = emDiario();
-    el.dificil.checked = estado.ajustes.dificil;
-    var marcado = el.ajustes.querySelector('input[name="regiao"][value="' + estado.ajustes.regiao + '"]');
-    if (marcado) marcado.checked = true;
-    var modo = el.ajustes.querySelector('input[name="modo"][value="' + estado.ajustes.modo + '"]');
-    if (modo) modo.checked = true;
-    el.jogo.setAttribute("data-modo", estado.ajustes.modo);
-    el.placarVidas.hidden = !emSobrevivencia();
-    el.placarTempo.hidden = !emRelogio();
-    el.rotuloSequencia.textContent = emSobrevivencia() || emRelogio() ? "Acertos" : emDiario() ? "Dias seguidos" : "Sequência";
+  function nomesDasRegioes(valores) {
+    return valores.map(function (v) { return filtroDaRegiao(v).rotulo; });
   }
 
-  // Começa uma corrida nova da sobrevivência (ou zera o placar ao trocar de modo).
+  function aplicarAjustes() {
+    el.jogo.setAttribute("data-modo-dificil", estado.ajustes.dificil && !emDiario() ? "sim" : "nao");
+    el.jogo.setAttribute("data-modo", estado.ajustes.modo);
+    el.jogo.setAttribute("data-bandeira", bandeiraInteira() ? "inteira" : "pedacos");
+    el.jogo.setAttribute("data-resposta", comAlternativas() ? "alternativas" : "digitar");
+    el.placarVidas.hidden = !emSobrevivencia();
+    el.placarTempo.hidden = !emRelogio();
+    el.rotuloSequencia.textContent = emDiario() ? "Dias seguidos" : "Acertos";
+    // Linha de resumo acima da mesa, por exemplo "Clássico · Em pedaços · Digitar · Europa, Ásia · Difícil".
+    var a = estado.ajustes;
+    var partes = [{ classico: "Clássico", relogio: "Contra o relógio", diario: "Diário" }[a.modo]];
+    partes.push(bandeiraInteira() ? T.inteira : "Em pedaços", comAlternativas() ? "Alternativas" : "Digitar");
+    if (!emDiario()) {
+      partes.push(a.regioes.length ? nomesDasRegioes(a.regioes).join(", ") : T.nenhumaRegiao);
+      if (a.dificil) partes.push("Difícil");
+    }
+    el.resumo.textContent = partes.join(" · ");
+  }
+
+  /* ---------- painel de ajustes ("Antes de começar") ---------- */
+
+  function preencherPainel() {
+    var a = estado.ajustes;
+    el.ajustes.querySelector('input[name="bandeira"][value="' + a.bandeira + '"]').checked = true;
+    el.ajustes.querySelector('input[name="resposta"][value="' + a.resposta + '"]').checked = true;
+    el.ajustes.querySelector('input[name="modo"][value="' + a.modo + '"]').checked = true;
+    Array.prototype.forEach.call(el.ajustes.querySelectorAll('input[name="regiao"]'), function (i) {
+      i.checked = a.regioes.indexOf(i.value) !== -1;
+    });
+    el.dificil.checked = a.dificil;
+    atualizarPainel();
+  }
+
+  function lerPainel() {
+    function marcado(nome) { return el.ajustes.querySelector('input[name="' + nome + '"]:checked').value; }
+    return {
+      bandeira: marcado("bandeira"),
+      resposta: marcado("resposta"),
+      modo: marcado("modo"),
+      regioes: Array.prototype.filter.call(el.ajustes.querySelectorAll('input[name="regiao"]'), function (i) { return i.checked; })
+        .map(function (i) { return i.value; }),
+      dificil: el.dificil.checked,
+    };
+  }
+
+  // Explica a escolha atual e trava o que o Diário não deixa mudar.
+  function atualizarPainel() {
+    var a = lerPainel();
+    var diario = a.modo === "diario";
+    $("seg-bandeira").disabled = diario;
+    $("seg-resposta").disabled = diario;
+    $("seg-regiao").disabled = diario;
+    el.dificil.disabled = diario;
+    var notas = {
+      "pedacos.digitar": T.oItem + " começa " + T.coberto + " e cada erro abre mais um pedaço. Vale até 120 pontos.",
+      "inteira.digitar": T.oItem + " aparece " + T.inteira.toLowerCase() + " e você digita o nome. Vale " + PONTOS_INTEIRA + " pontos.",
+      "pedacos.alternativas": T.coberto.charAt(0).toUpperCase() + T.coberto.slice(1) + " em pedaços, com 4 opções. Cada erro abre um pedaço e elimina uma opção. Vale até 60 pontos.",
+      "inteira.alternativas": T.inteira + ", com 4 opções para escolher. Vale " + PONTOS_INTEIRA_ALTERNATIVAS + " pontos.",
+    };
+    $("nota-jeito").textContent = diario
+      ? "No Diário é sempre em pedaços e digitando, para ser igual para todo mundo."
+      : notas[a.bandeira + "." + a.resposta] + (a.dificil ? " No difícil, em dobro." : "");
+    $("nota-modo").textContent = {
+      classico: "3 vidas. Cada erro tira uma. Começa pelos mais conhecidos e vai complicando.",
+      relogio: "60 segundos para acertar o máximo que conseguir. Erro não tira vida.",
+      diario: "Um por dia, igual para todo mundo. Sempre com todas as regiões e sem modo difícil.",
+    }[a.modo];
+  }
+
+  function abrirPainel() {
+    preencherPainel();
+    el.cancelar.hidden = !ajustesSalvos;
+    if (el.painel.showModal) el.painel.showModal(); else el.painel.setAttribute("open", "");
+    var primeiro = el.ajustes.querySelector('input[name="bandeira"]:checked');
+    if (primeiro) primeiro.focus();
+  }
+
+  function fecharPainel() {
+    if (el.painel.close) el.painel.close(); else el.painel.removeAttribute("open");
+    el.trocar.focus({ preventScroll: true });
+  }
+
+  function confirmarPainel(evento) {
+    evento.preventDefault();
+    estado.ajustes = lerPainel();
+    ajustesSalvos = true;
+    salvarAjustes();
+    aplicarAjustes();
+    iniciarCorrida();
+    fecharPainel();
+    if (!estado.paises.length) return;
+    montarPool();
+    novaRodada();
+  }
+
+  // Começa uma corrida nova (zera vidas, pontos, tempo e acertos).
   function iniciarCorrida() {
     el.compartilhar.hidden = true;
     el.proxima.hidden = false;
@@ -369,22 +491,6 @@
     }
     el.proxima.textContent = T.proxima;
     atualizarPlacar();
-  }
-
-  function mudarAjustes() {
-    var regiao = el.ajustes.querySelector('input[name="regiao"]:checked');
-    var modo = el.ajustes.querySelector('input[name="modo"]:checked');
-    var modoAntes = estado.ajustes.modo;
-    estado.ajustes.regiao = regiao ? regiao.value : "mundo";
-    estado.ajustes.dificil = el.dificil.checked;
-    estado.ajustes.modo = modo ? modo.value : "classico";
-    salvarAjustes();
-    aplicarAjustes();
-    // Na sobrevivência qualquer mudança começa uma corrida nova; trocar de modo também zera o placar.
-    if (estado.ajustes.modo !== "classico" || modoAntes !== estado.ajustes.modo) iniciarCorrida();
-    if (!estado.paises.length) return;
-    montarPool();
-    novaRodada();
   }
 
   function carregarPaises() {
@@ -429,7 +535,7 @@
 
   /* ---------- rodada ---------- */
 
-  // Na sobrevivência, só os países mais populosos no começo; a lista cresce a cada acerto.
+  // No Clássico, só os países mais populosos no começo; a lista cresce a cada acerto.
   function poolDaVez() {
     if (!emSobrevivencia()) return estado.pool;
     var ordenados = estado.pool.slice().sort(function (a, b) { return b.populacao - a.populacao; });
@@ -461,8 +567,10 @@
     estado.ordem = emDiario() ? embaralhar([1, 2, 3, 4, 5, 6], geradorDoDia("ordem")) : embaralhar([1, 2, 3, 4, 5, 6]);
     estado.marcas = [];
     estado.abertas = 0;
+    estado.erros = 0;
     estado.chutes = [];
     estado.encerrada = false;
+    if (comAlternativas()) montarAlternativas(alvo); else el.alternativas.replaceChildren();
 
     setEstado("carregando");
     fecharPecas();
@@ -489,19 +597,26 @@
       el.quadro.style.setProperty("--proporcao", w + " / " + h);
       el.img.hidden = false;
       setEstado("jogando");
-      abrirProxima();
+      if (!bandeiraInteira()) abrirProxima();
+      atualizarProgresso();
       travarForm(false);
-      var abertura = "inicio";
+      var abertura = bandeiraInteira() ? "inicio_inteira" : comAlternativas() ? "inicio_alternativas" : "inicio";
       if (emSobrevivencia() && estado.primeiraDaCorrida) abertura = "sobrevivencia_inicio";
       else if (emRelogio() && estado.primeiraDaCorrida) abertura = "relogio_inicio";
       else if (emDiario()) abertura = "diario_inicio";
       else if (estado.ajustes.dificil) abertura = "inicio_dificil";
       estado.primeiraDaCorrida = false;
       falar(abertura, { pais: alvo.nome, vidas: estado.vidas }, "neutro", "inicio");
-      el.campo.focus({ preventScroll: true });
+      if (comAlternativas()) {
+        var primeira = el.alternativas.querySelector(".alternativa");
+        if (primeira && !(el.painel.open)) primeira.focus({ preventScroll: true });
+      } else if (!el.painel.open) {
+        el.campo.focus({ preventScroll: true });
+      }
       if (emRelogio()) {
         ligarRelogio();
-        estado.revelacao = setInterval(revelarSozinho, REVELAR_A_CADA);
+        // Com a bandeira inteira não há pedaço para abrir; a rodada só passa com acerto ou "Desisto".
+        if (!bandeiraInteira()) estado.revelacao = setInterval(revelarSozinho, REVELAR_A_CADA);
       }
     }
     setTimeout(function () { esperou = true; comecar(); }, emRelogio() ? ESPERA_RELOGIO : ESPERA_BANDEIRA);
@@ -541,8 +656,14 @@
   }
 
   function valorAtual() {
-    if (!estado.abertas) return 0;
-    var base = (TOTAL_PECAS + 1 - estado.abertas) * PONTOS_POR_PECA;
+    var base;
+    if (bandeiraInteira()) {
+      base = comAlternativas() ? PONTOS_INTEIRA_ALTERNATIVAS : PONTOS_INTEIRA;
+    } else {
+      if (!estado.abertas) return 0;
+      base = (TOTAL_PECAS + 1 - estado.abertas) * PONTOS_POR_PECA;
+      if (comAlternativas()) base = base / 2;
+    }
     return estado.ajustes.dificil && !emDiario() ? base * MULTIPLICADOR_DIFICIL : base;
   }
 
@@ -566,6 +687,80 @@
     el.botao.disabled = travar;
     el.desisto.disabled = travar;
     el.botaoLista.disabled = travar;
+    Array.prototype.forEach.call(el.alternativas.querySelectorAll(".alternativa"), function (b) {
+      b.disabled = travar || b.classList.contains("is-errada");
+    });
+  }
+
+  /* ---------- quatro alternativas ---------- */
+
+  // Três opções erradas: no difícil, primeiro as bandeiras parecidas e as da mesma sub-região;
+  // depois as da mesma região; se faltar, qualquer uma. Nunca dois itens com o mesmo nome
+  // (no Retrô há várias versões do mesmo clube).
+  function escolherErradas(alvo, quantas) {
+    // No difícil vale qualquer item das regiões marcadas; no normal, só os que já estão
+    // na fatia de famosos do Clássico, para as erradas não serem desconhecidas demais.
+    var base = estado.ajustes.dificil ? estado.pool : poolDaVez();
+    if (base.length < TOTAL_ALTERNATIVAS) base = estado.pool;
+    if (base.length < TOTAL_ALTERNATIVAS) base = estado.paises.filter(function (p) { return !p.soNaRegiao; });
+    var outros = base.filter(function (p) { return p.nome !== alvo.nome; });
+    var escolhidas = [];
+    function pegar(lista) {
+      embaralhar(lista).forEach(function (p) {
+        if (escolhidas.length < quantas && !escolhidas.some(function (e) { return e.nome === p.nome; })) escolhidas.push(p);
+      });
+    }
+    if (estado.ajustes.dificil) {
+      var parecidas = PARECIDAS[alvo.codigo] || [];
+      pegar(outros.filter(function (p) { return parecidas.indexOf(p.codigo) !== -1; }));
+      if (alvo.subregiao) pegar(outros.filter(function (p) { return p.subregiao === alvo.subregiao; }));
+    }
+    pegar(outros.filter(function (p) { return p.regiao === alvo.regiao; }));
+    pegar(outros);
+    return escolhidas;
+  }
+
+  function montarAlternativas(alvo) {
+    var opcoes = embaralhar([alvo].concat(escolherErradas(alvo, TOTAL_ALTERNATIVAS - 1)));
+    var frag = document.createDocumentFragment();
+    opcoes.forEach(function (p, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "alternativa";
+      b.setAttribute("data-codigo", p.codigo);
+      b.disabled = true;
+      var tecla = document.createElement("span");
+      tecla.className = "alternativa__tecla";
+      tecla.setAttribute("aria-hidden", "true");
+      tecla.textContent = i + 1;
+      var nome = document.createElement("span");
+      nome.textContent = p.nome;
+      b.append(tecla, nome);
+      b.addEventListener("click", function () {
+        if (!estado.encerrada && !b.disabled) processarChute(p);
+      });
+      frag.appendChild(b);
+    });
+    el.alternativas.replaceChildren(frag);
+  }
+
+  function marcarAlternativa(codigo, classe) {
+    var b = el.alternativas.querySelector('[data-codigo="' + codigo + '"]');
+    if (!b) return;
+    b.classList.add(classe);
+    if (classe === "is-errada") b.disabled = true;
+  }
+
+  // Teclas 1 a 4 escolhem a alternativa.
+  function teclaAlternativa(evento) {
+    if (!comAlternativas() || estado.encerrada || el.painel.open) return;
+    if (evento.ctrlKey || evento.metaKey || evento.altKey) return;
+    var alvo = evento.target;
+    if (alvo && (alvo.tagName === "INPUT" || alvo.tagName === "TEXTAREA")) return;
+    var n = parseInt(evento.key, 10);
+    if (!(n >= 1 && n <= TOTAL_ALTERNATIVAS)) return;
+    var b = el.alternativas.querySelectorAll(".alternativa")[n - 1];
+    if (b && !b.disabled) { evento.preventDefault(); b.click(); }
   }
 
   function limparAviso() {
@@ -751,6 +946,7 @@
     if (pais.codigo === estado.alvo.codigo) {
       estado.marcas.push(true);
       registrarChute(pais, true);
+      if (comAlternativas()) marcarAlternativa(pais.codigo, "is-certa");
       vencer();
       return;
     }
@@ -758,6 +954,8 @@
     var dica = calcularPista(pais, estado.alvo);
     registrarChute(pais, false, dica);
     estado.marcas.push(false);
+    estado.erros++;
+    if (comAlternativas()) marcarAlternativa(pais.codigo, "is-errada");
     var perdeuVida = false;
     if (emSobrevivencia() && estado.marcas.filter(function (m) { return !m; }).length > ERROS_SEM_CUSTO) {
       estado.vidas--;
@@ -765,12 +963,12 @@
       if (estado.vidas <= 0) { fimDaCorrida("erro"); return; }
       perdeuVida = true;
     }
-    if (estado.abertas >= TOTAL_PECAS) {
+    if (!bandeiraInteira() && estado.abertas >= TOTAL_PECAS) {
       perder("derrota", "zoando");
       return;
     }
     // No relógio os pedaços abrem sozinhos; chute errado não abre mais um.
-    if (!emRelogio()) abrirProxima();
+    if (!emRelogio() && !bandeiraInteira()) abrirProxima();
     var dados = { chute: pais.nome, pais: estado.alvo.nome };
     var categoria = "erro";
     if (dica) {
@@ -786,7 +984,12 @@
     } else {
       falar(categoria, dados, "zoando");
     }
-    el.campo.focus();
+    if (comAlternativas()) {
+      var proxima = el.alternativas.querySelector(".alternativa:not(:disabled)");
+      if (proxima) proxima.focus();
+    } else {
+      el.campo.focus();
+    }
   }
 
   /* ---------- dica de direção e distância ---------- */
@@ -857,13 +1060,15 @@
       salvarRecorde(estado.recorde);
     }
     var categoria = pedacos === 1 ? "acerto_genio" : pedacos <= 3 ? "acerto_bom" : "acerto_sofrido";
-    falar(categoria, { pais: estado.alvo.nome, pedacos: pedacos, pontos: ganho }, "chocado");
+    var detalhe = "Com " + pedacos + (pedacos === 1 ? " pedaço" : " pedaços") + " à mostra.";
+    if (bandeiraInteira()) {
+      categoria = estado.erros === 0 ? "acerto_inteira" : "acerto_sofrido";
+      detalhe = estado.erros === 0 ? "De primeira." : "Depois de " + estado.erros + (estado.erros === 1 ? " erro." : " erros.");
+    }
+    falar(categoria, { pais: estado.alvo.nome, pedacos: pedacos, pontos: ganho }, "chocado", "acerto_bom");
     estado.ganhoRodada = ganho;
     if (emRelogio()) { seguirNoRelogio(); return; }
-    encerrar(
-      "Acertou, é",
-      "Com " + pedacos + (pedacos === 1 ? " pedaço" : " pedaços") + " à mostra. Mais " + ganho + " pontos."
-    );
+    encerrar("Acertou, é", detalhe + " Mais " + ganho + " pontos.");
     perguntarCapital();
     if (emDiario()) mostrarCompartilhar();
   }
@@ -1155,6 +1360,7 @@
 
   function encerrar(rotulo, placar) {
     estado.encerrada = true;
+    if (comAlternativas() && estado.alvo) marcarAlternativa(estado.alvo.codigo, "is-certa");
     abrirTodas();
     atualizarProgresso();
     atualizarPlacar();
@@ -1191,10 +1397,16 @@
   });
   el.tentar.addEventListener("click", carregarPaises);
 
-  el.ajustes.addEventListener("change", mudarAjustes);
+  el.ajustes.addEventListener("change", atualizarPainel);
+  el.ajustes.addEventListener("submit", confirmarPainel);
+  el.trocar.addEventListener("click", abrirPainel);
+  el.cancelar.addEventListener("click", fecharPainel);
+  document.addEventListener("keydown", teclaAlternativa);
 
   aplicarTema();
   aplicarAjustes();
   iniciarCorrida();
   carregarPaises();
+  // Na primeira visita, o painel "Antes de começar" abre sozinho.
+  if (!ajustesSalvos) abrirPainel();
 })();

@@ -146,7 +146,7 @@
     chutes: $("lista-chutes"), chutesVazio: $("chutes-vazio"),
     pontos: $("pontos"), sequencia: $("sequencia"), recorde: $("recorde"),
     ajustes: $("ajustes"), dificil: $("ajuste-dificil"),
-    resumo: $("resumo"), trocar: $("botao-trocar"), painel: $("painel"), cancelar: $("botao-cancelar"),
+    mesa: $("ajustes-mesa"), inteira: $("ajuste-inteira"), resumo: $("resumo"), trocar: $("botao-trocar"), painel: $("painel"), cancelar: $("botao-cancelar"),
     alternativas: $("alternativas"),
     placarVidas: $("placar-vidas"), vidas: $("vidas"), placarTempo: $("placar-tempo"), tempo: $("tempo"), rotuloSequencia: $("rotulo-sequencia"),
     compartilhar: $("botao-compartilhar"), compartilharAviso: $("compartilhar-aviso"),
@@ -345,11 +345,8 @@
     el.campoCapital.placeholder = T.placeholderBonus;
     el.proxima.textContent = T.proxima;
     $("dificil-explica").textContent = T.explicaDificil;
-    $("legenda-bandeira").textContent = T.palavra;
-    $("rotulo-inteira").textContent = T.inteira;
-    $("t-regioes").textContent = T.tituloRegioes;
-    $("nota-regioes").textContent = T.notaRegioes;
-    $("legenda-regioes").textContent = T.tituloRegioes + ", marque quantas quiser";
+    $("rotulo-inteira").textContent = T.palavra + " " + T.inteira.toLowerCase();
+    $("legenda-regioes").textContent = T.tituloRegioes + ". " + T.notaRegioes;
     $("creditos").innerHTML = T.creditos;
     var troca = $("troca-tema");
     troca.href = T.trocaPara === "futebol" ? "./?tema=futebol" : "./";
@@ -372,10 +369,6 @@
     });
   }
 
-  function nomesDasRegioes(valores) {
-    return valores.map(function (v) { return filtroDaRegiao(v).rotulo; });
-  }
-
   function aplicarAjustes() {
     el.jogo.setAttribute("data-modo-dificil", estado.ajustes.dificil && !emDiario() ? "sim" : "nao");
     el.jogo.setAttribute("data-modo", estado.ajustes.modo);
@@ -384,60 +377,69 @@
     el.placarVidas.hidden = !emSobrevivencia();
     el.placarTempo.hidden = !emRelogio();
     el.rotuloSequencia.textContent = emDiario() ? "Dias seguidos" : "Acertos";
-    // Linha de resumo acima da mesa, por exemplo "Clássico · Em pedaços · Digitar · Europa, Ásia · Difícil".
+    // No botão do modo: "Clássico · Digitar". Regiões, inteira e difícil ficam à vista na tela.
     var a = estado.ajustes;
     var partes = [{ classico: "Clássico", relogio: "Contra o relógio", diario: "Diário" }[a.modo]];
-    partes.push(bandeiraInteira() ? T.inteira : "Em pedaços", comAlternativas() ? "Alternativas" : "Digitar");
-    if (!emDiario()) {
-      partes.push(a.regioes.length ? nomesDasRegioes(a.regioes).join(", ") : T.nenhumaRegiao);
-      if (a.dificil) partes.push("Difícil");
-    }
+    partes.push(comAlternativas() ? "Alternativas" : "Digitar");
     el.resumo.textContent = partes.join(" · ");
+    preencherMesa();
+  }
+
+  /* ---------- ajustes na tela do jogo: regiões, inteira e difícil ---------- */
+
+  function preencherMesa() {
+    var a = estado.ajustes;
+    Array.prototype.forEach.call(el.mesa.querySelectorAll('input[name="regiao"]'), function (i) {
+      i.checked = a.regioes.indexOf(i.value) !== -1;
+    });
+    el.inteira.checked = a.bandeira === "inteira";
+    el.dificil.checked = a.dificil;
+    // O Diário é igual para todo mundo: sem escolher região, sem inteira e sem difícil.
+    $("seg-regiao").disabled = emDiario();
+    el.inteira.disabled = emDiario();
+    el.dificil.disabled = emDiario();
+  }
+
+  // Qualquer mudança aqui vale na hora e começa uma corrida nova.
+  function mudarMesa() {
+    var a = estado.ajustes;
+    a.regioes = Array.prototype.filter.call(el.mesa.querySelectorAll('input[name="regiao"]'), function (i) { return i.checked; })
+      .map(function (i) { return i.value; });
+    a.bandeira = el.inteira.checked ? "inteira" : "pedacos";
+    a.dificil = el.dificil.checked;
+    ajustesSalvos = true;
+    salvarAjustes();
+    aplicarAjustes();
+    iniciarCorrida();
+    if (!estado.paises.length) return;
+    montarPool();
+    novaRodada();
   }
 
   /* ---------- painel de ajustes ("Antes de começar") ---------- */
 
   function preencherPainel() {
     var a = estado.ajustes;
-    el.ajustes.querySelector('input[name="bandeira"][value="' + a.bandeira + '"]').checked = true;
     el.ajustes.querySelector('input[name="resposta"][value="' + a.resposta + '"]').checked = true;
     el.ajustes.querySelector('input[name="modo"][value="' + a.modo + '"]').checked = true;
-    Array.prototype.forEach.call(el.ajustes.querySelectorAll('input[name="regiao"]'), function (i) {
-      i.checked = a.regioes.indexOf(i.value) !== -1;
-    });
-    el.dificil.checked = a.dificil;
     atualizarPainel();
   }
 
   function lerPainel() {
     function marcado(nome) { return el.ajustes.querySelector('input[name="' + nome + '"]:checked').value; }
-    return {
-      bandeira: marcado("bandeira"),
-      resposta: marcado("resposta"),
-      modo: marcado("modo"),
-      regioes: Array.prototype.filter.call(el.ajustes.querySelectorAll('input[name="regiao"]'), function (i) { return i.checked; })
-        .map(function (i) { return i.value; }),
-      dificil: el.dificil.checked,
-    };
+    return { resposta: marcado("resposta"), modo: marcado("modo") };
   }
 
   // Explica a escolha atual e trava o que o Diário não deixa mudar.
   function atualizarPainel() {
     var a = lerPainel();
     var diario = a.modo === "diario";
-    $("seg-bandeira").disabled = diario;
     $("seg-resposta").disabled = diario;
-    $("seg-regiao").disabled = diario;
-    el.dificil.disabled = diario;
-    var notas = {
-      "pedacos.digitar": T.oItem + " começa " + T.coberto + " e cada erro abre mais um pedaço. Vale até 120 pontos.",
-      "inteira.digitar": T.oItem + " aparece " + T.inteira.toLowerCase() + " e você digita o nome. Vale " + PONTOS_INTEIRA + " pontos.",
-      "pedacos.alternativas": T.coberto.charAt(0).toUpperCase() + T.coberto.slice(1) + " em pedaços, com 4 opções. Cada erro abre um pedaço e elimina uma opção. Vale até 60 pontos.",
-      "inteira.alternativas": T.inteira + ", com 4 opções para escolher. Vale " + PONTOS_INTEIRA_ALTERNATIVAS + " pontos.",
-    };
     $("nota-jeito").textContent = diario
       ? "No Diário é sempre em pedaços e digitando, para ser igual para todo mundo."
-      : notas[a.bandeira + "." + a.resposta] + (a.dificil ? " No difícil, em dobro." : "");
+      : a.resposta === "alternativas"
+        ? "Quatro opções, uma certa. Cada erro risca a opção errada. Vale a metade dos pontos de digitar."
+        : "Você digita o nome. Em pedaços vale até 120 pontos; " + T.inteira.toLowerCase() + ", " + PONTOS_INTEIRA + ".";
     $("nota-modo").textContent = {
       classico: "3 vidas. Cada erro tira uma. Começa pelos mais conhecidos e vai complicando.",
       relogio: "60 segundos para acertar o máximo que conseguir. Erro não tira vida.",
@@ -449,7 +451,7 @@
     preencherPainel();
     el.cancelar.hidden = !ajustesSalvos;
     if (el.painel.showModal) el.painel.showModal(); else el.painel.setAttribute("open", "");
-    var primeiro = el.ajustes.querySelector('input[name="bandeira"]:checked');
+    var primeiro = el.ajustes.querySelector('input[name="resposta"]:checked');
     if (primeiro) primeiro.focus();
   }
 
@@ -460,7 +462,9 @@
 
   function confirmarPainel(evento) {
     evento.preventDefault();
-    estado.ajustes = lerPainel();
+    var escolha = lerPainel();
+    estado.ajustes.resposta = escolha.resposta;
+    estado.ajustes.modo = escolha.modo;
     ajustesSalvos = true;
     salvarAjustes();
     aplicarAjustes();
@@ -1398,6 +1402,8 @@
   el.tentar.addEventListener("click", carregarPaises);
 
   el.ajustes.addEventListener("change", atualizarPainel);
+  el.mesa.addEventListener("change", mudarMesa);
+  el.mesa.addEventListener("submit", function (e) { e.preventDefault(); });
   el.ajustes.addEventListener("submit", confirmarPainel);
   el.trocar.addEventListener("click", abrirPainel);
   el.cancelar.addEventListener("click", fecharPainel);

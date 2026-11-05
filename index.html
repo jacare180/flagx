@@ -33,10 +33,27 @@
     <section class="mesa" aria-labelledby="titulo-mesa">
       <div class="mesa__cabeca">
         <h1 id="titulo-mesa">Que bandeira é essa?</h1>
-        <div class="resumo">
-          <p class="resumo__texto" id="resumo"></p>
-          <button class="btn btn--secundario btn--baixo" id="botao-trocar" type="button" aria-haspopup="dialog" aria-controls="painel">Trocar</button>
-        </div>
+        <form class="mesa__ajustes" id="ajustes-mesa" novalidate>
+          <button class="modo-atual" id="botao-trocar" type="button" aria-haspopup="dialog" aria-controls="painel">
+            <span class="modo-atual__rotulo">Modo</span>
+            <span class="modo-atual__texto" id="resumo">Clássico · Digitar</span>
+            <span class="modo-atual__acao">Trocar</span>
+          </button>
+          <fieldset class="seg" id="seg-regiao">
+            <legend class="visually-hidden" id="legenda-regioes">Regiões, marque quantas quiser. Sem nenhuma marcada, vale o mundo todo.</legend>
+          </fieldset>
+          <div class="interruptores">
+            <div class="interruptor">
+              <input type="checkbox" role="switch" id="ajuste-inteira" name="inteira">
+              <label for="ajuste-inteira"><span class="interruptor__trilho" aria-hidden="true"></span><span id="rotulo-inteira">Bandeira inteira</span></label>
+            </div>
+            <div class="interruptor">
+              <input type="checkbox" role="switch" id="ajuste-dificil" name="dificil" aria-describedby="dificil-explica">
+              <label for="ajuste-dificil"><span class="interruptor__trilho" aria-hidden="true"></span>Difícil</label>
+            </div>
+            <span class="interruptores__nota" id="dificil-explica">Sem cor, espelhada, com territórios. Pontos em dobro.</span>
+          </div>
+        </form>
       </div>
 
       <figure class="quadro" id="quadro" aria-describedby="progresso">
@@ -141,18 +158,13 @@
 
     <dialog class="painel" id="painel" aria-labelledby="painel-titulo">
       <form class="ajustes" id="ajustes" novalidate>
-        <h2 class="painel__titulo" id="painel-titulo">Antes de começar</h2>
+        <h2 class="painel__titulo" id="painel-titulo">Como você quer jogar?</h2>
 
         <section class="ajustes__grupo" aria-labelledby="t-jeito">
-          <h3 id="t-jeito">Jeito de jogar</h3>
+          <h3 id="t-jeito">Jeito de responder</h3>
           <div class="ajustes__pares">
-            <fieldset class="seg" id="seg-bandeira">
-              <legend id="legenda-bandeira">Bandeira</legend>
-              <input type="radio" name="bandeira" id="b-pedacos" value="pedacos" checked><label for="b-pedacos">Em pedaços</label>
-              <input type="radio" name="bandeira" id="b-inteira" value="inteira"><label for="b-inteira" id="rotulo-inteira">Inteira</label>
-            </fieldset>
             <fieldset class="seg" id="seg-resposta">
-              <legend>Resposta</legend>
+              <legend class="visually-hidden">Resposta</legend>
               <input type="radio" name="resposta" id="a-digitar" value="digitar" checked><label for="a-digitar">Digitar</label>
               <input type="radio" name="resposta" id="a-alternativas" value="alternativas"><label for="a-alternativas">Alternativas</label>
             </fieldset>
@@ -169,23 +181,6 @@
             <input type="radio" name="modo" id="m-diario" value="diario"><label for="m-diario">Diário</label>
           </fieldset>
           <p class="ajustes__nota" id="nota-modo"></p>
-        </section>
-
-        <section class="ajustes__grupo" aria-labelledby="t-regioes">
-          <h3 id="t-regioes">Regiões</h3>
-          <fieldset class="seg" id="seg-regiao">
-            <legend class="visually-hidden" id="legenda-regioes">Regiões, marque quantas quiser</legend>
-          </fieldset>
-          <p class="ajustes__nota" id="nota-regioes">Marque quantas quiser. Sem nenhuma marcada, vale o mundo todo.</p>
-        </section>
-
-        <section class="ajustes__grupo" aria-labelledby="t-dificil">
-          <h3 id="t-dificil">Dificuldade</h3>
-          <div class="dificil">
-            <input type="checkbox" id="ajuste-dificil" name="dificil" aria-describedby="dificil-explica">
-            <label for="ajuste-dificil">Difícil</label>
-            <span class="dificil__explica" id="dificil-explica">Sem cor, espelhada, com territórios. Pontos em dobro.</span>
-          </div>
         </section>
 
         <div class="painel__acoes">

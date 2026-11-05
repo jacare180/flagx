@@ -11,7 +11,7 @@ Escudos de futebol: https://jacare180.github.io/flagx/?tema=futebol (ou o ícone
 Como funciona
 -------------
 
-Antes de começar, um painel pede quatro escolhas (o botão "Trocar" reabre o painel):
+O botão "Modo" acima da bandeira abre um painel com o jeito de responder (digitar ou alternativas) e o modo. Regiões, "Bandeira inteira" e "Difícil" ficam direto na tela do jogo e valem na hora (começam uma corrida nova).
 
 * **Jeito de jogar:** a bandeira vem **em pedaços** ou **inteira**, e a resposta é **digitando** ou escolhendo entre **4 alternativas**.
   * Em pedaços e digitando: acertar com 1 pedaço vale 120 pontos e cada pedaço a mais tira 20.
